@@ -30,9 +30,6 @@ namespace M.Model {
 			validator.Validation += () => {
 				Rebuild();
 			};
-
-			Add(new Quad());
-			Add(new Triangle());
 		}
 
 		#region interface
@@ -102,6 +99,10 @@ namespace M.Model {
 				indices.AddRange(t.Indices.Select(i => i + offset));
 				barycentric.AddRange(t.BarycentricWeights);
 			}
+
+			Debug.LogFormat(
+				"Mapper.Rebuild:vout={0},vin={1},indices={2},bary={3}",
+				vout.Count, vin.Count, indices.Count, barycentric.Count);
 		}
 
 		#endregion

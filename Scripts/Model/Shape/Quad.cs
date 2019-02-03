@@ -7,7 +7,7 @@ using System.Linq;
 using UnityEngine;
 
 namespace M.Model.Shape {
-
+	[System.Serializable]
 	public class Quad : ITriangleComplex {
 		public static readonly int[] INDICES = new int[] { 0, 1, 2, 0, 2, 3 };
 		public static readonly Vector4[] BARYCENTRIC_WEIGHTS = new Vector4[] {
@@ -18,18 +18,14 @@ namespace M.Model.Shape {
 		};
 
 		[SerializeField]
-		protected Vector2[] input = new Vector2[4];
+		protected readonly Vector2[] input = new Vector2[4];
 		[SerializeField]
-		protected Vector2[] output = new Vector2[4];
+		protected readonly Vector2[] output = new Vector2[4];
 
-		protected Validator validator = new Validator();
-		protected Vector3[] outputParallelized = new Vector3[4];
+		protected readonly Validator validator = new Validator();
+		protected readonly Vector3[] outputParallelized = new Vector3[4];
 
 		public Quad() {
-			System.Array.Resize(ref input, 4);
-			System.Array.Resize(ref output, 4);
-			System.Array.Resize(ref outputParallelized, 4);
-
 			input[0] = new Vector2(-0.5f, -0.5f);
 			input[1] = new Vector2(-0.5f, 0.5f);
 			input[2] = new Vector2(0.5f, 0.5f);

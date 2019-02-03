@@ -23,10 +23,10 @@ namespace M.Model {
 		}
 
 		#region interface
-		public ComputeBuffer VertexOutputs { get; set; }
-		public ComputeBuffer VertexInputs { get; set; }
-		public ComputeBuffer Indices { get; set; }
-		public ComputeBuffer Barys { get; set; }
+		public GPUList<Vector3> VertexOutputs { get; set; }
+		public GPUList<Vector2> VertexInputs { get; set; }
+		public GPUList<int> Indices { get; set; }
+		public GPUList<Vector4> Barys { get; set; }
 
 		public void Blit(RenderTexture src, RenderTexture dst) {
 			using (new RenderTextureActivator(dst)) {
@@ -36,7 +36,7 @@ namespace M.Model {
 				mat.SetBuffer(ID_INDICES, Indices);
 				mat.SetBuffer(ID_BARY_WEIGHTS, Barys);
 				mat.SetPass(0);
-				Graphics.DrawProcedural(MeshTopology.Triangles, Indices.count);
+				Graphics.DrawProcedural(MeshTopology.Triangles, Indices.Count);
 			}
 		}
 

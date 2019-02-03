@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace M.Model.Shape {
-
+	[System.Serializable]
 	public class Triangle : ITriangleComplex {
 		public IList<Vector3> VertexOutput {
 			get {
@@ -37,8 +37,7 @@ namespace M.Model.Shape {
 				return new Vector4[] {
 					new Vector4(0, 0, 1, 1),
 					new Vector4(0, 1, 1, 0),
-					new Vector4(1, 1, 0, 0),
-					new Vector4(1, 0, 0, 1)
+					new Vector4(1, 1, 0, 0)
 				};
 			}
 		}
