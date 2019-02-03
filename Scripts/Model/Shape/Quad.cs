@@ -1,48 +1,79 @@
 using M.Base;
+using nobnak.Gist;
+using nobnak.Gist.Extensions.GeometryExt;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace M.Model.Shape {
 
 	public class Quad : ITriangleComplex {
+		public static readonly int[] INDICES = new int[] { 0, 1, 2, 0, 2, 3 };
+		public static readonly Vector4[] BARYCENTRIC_WEIGHTS = new Vector4[] {
+			new Vector4(0, 0, 1, 1),
+			new Vector4(0, 1, 1, 0),
+			new Vector4(1, 1, 0, 0),
+			new Vector4(1, 0, 0, 1)
+		};
+
+		[SerializeField]
+		protected Vector2[] input = new Vector2[4];
+		[SerializeField]
+		protected Vector2[] output = new Vector2[4];
+
+		protected Validator validator = new Validator();
+		protected Vector3[] outputParallelized = new Vector3[4];
+
+		public Quad() {
+			System.Array.Resize(ref input, 4);
+			System.Array.Resize(ref output, 4);
+			System.Array.Resize(ref outputParallelized, 4);
+
+			input[0] = new Vector2(-0.5f, -0.5f);
+			input[1] = new Vector2(-0.5f, 0.5f);
+			input[2] = new Vector2(0.5f, 0.5f);
+			input[3] = new Vector2(0.5f, -0.5f);
+
+			output[0] = new Vector2(0f, 0f);
+			output[1] = new Vector2(-0.5f, 1f);
+			output[2] = new Vector2(1f, 1f);
+			output[3] = new Vector2(1f, 0f);
+
+			validator.Validation += () => {
+				if (!output.TryBuildParallelorism(outputParallelized)) {
+					Debug.LogWarningFormat("Failed to find w on {0}", this);
+					validator.Invalidate();
+				}
+			};
+		}
+
+		#region interface
+		public override string ToString() {
+			return string.Format("<{0}:\ninput={1}\noutput={2}\nparallel={3}>",
+				typeof(Quad).Name,
+				string.Join(",", input.Select(v => v.ToString()).ToArray()),
+				string.Join(",", output.Select(v => v.ToString()).ToArray()),
+				string.Join(",", outputParallelized.Select(v => v.ToString()).ToArray()));
+		}
 		public IList<Vector3> VertexOutput {
 			get {
-				return new Vector3[] {
-					new Vector3(0f, 0f, 1f),
-					new Vector3(0f, 1f, 1f),
-					new Vector3(1f, 1f, 1f),
-					new Vector3(1f, 0f, 1f)
-				};
+				validator.Validate();
+				return outputParallelized;
 			}
 		}
-
 		public IList<Vector2> VertexInput {
 			get {
-				return new Vector2[] {
-					new Vector2(-0.5f, -0.5f),
-					new Vector2(-0.5f, 0.5f),
-					new Vector2(0.5f, 0.5f),
-					new Vector2(0.5f, -0.5f)
-				};
+				validator.Validate();
+				return input;
 			}
 		}
-
 		public IList<int> Indices {
-			get {
-				return new int[] { 0, 1, 2, 0, 2, 3 };
-			}
+			get { return INDICES; }
 		}
-
 		public IList<Vector4> BarycentricWeights {
-			get {
-				return new Vector4[] {
-					new Vector4(0, 0, 1, 1),
-					new Vector4(0, 1, 1, 0),
-					new Vector4(1, 1, 0, 0),
-					new Vector4(1, 0, 0, 1)
-				};
-			}
+			get { return BARYCENTRIC_WEIGHTS; }
 		}
+		#endregion
 	}
 }

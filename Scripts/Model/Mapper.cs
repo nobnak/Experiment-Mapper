@@ -1,5 +1,6 @@
 using M.Base;
 using M.Model.Shape;
+using nobnak.Gist;
 using nobnak.Gist.Extensions.Array;
 using nobnak.Gist.GPUBuffer;
 using nobnak.Gist.Scoped;
@@ -10,7 +11,7 @@ using UnityEngine;
 
 namespace M.Model {
 
-	public class Mapper : System.IDisposable {
+	public class Mapper : System.IDisposable, ICollection<ITriangleComplex> {
 
 		public const string NAMESPACE = "M";
 
@@ -20,24 +21,60 @@ namespace M.Model {
 		protected GPUList<int> indices = new GPUList<int>();
 		protected GPUList<Vector4> barycentric = new GPUList<Vector4>();
 
+		protected Validator validator = new Validator();
 		protected List<ITriangleComplex> triangles = new List<ITriangleComplex>();
 
 		public Mapper() {
 			mat = new MapperMaterial();
 
-			triangles.Add(new Quad());
+			validator.Validation += () => {
+				Rebuild();
+			};
 
-			Rebuild();
+			Add(new Quad());
+			Add(new Triangle());
 		}
 
 		#region interface
 		public void Update(RenderTexture src, RenderTexture dst) {
+			validator.Validate();
 			mat.VertexOutputs = vout;
 			mat.VertexInputs = vin;
 			mat.Indices = indices;
 			mat.Barys = barycentric;
 			mat.Blit(src, dst);
 		}
+
+		#region ICollection<ITriangleComplex>
+		public int Count {
+			get { return triangles.Count; }
+		}
+		public bool IsReadOnly { get { return false; } }
+		public void Add(ITriangleComplex item) {
+			validator.Invalidate();
+			triangles.Add(item);
+		}
+		public void Clear() {
+			validator.Invalidate();
+			triangles.Clear();
+		}
+		public bool Contains(ITriangleComplex item) {
+			return triangles.Contains(item);
+		}
+		public void CopyTo(ITriangleComplex[] array, int arrayIndex) {
+			triangles.CopyTo(array, arrayIndex);
+		}
+		public bool Remove(ITriangleComplex item) {
+			validator.Invalidate();
+			return triangles.Remove(item);
+		}
+		public IEnumerator<ITriangleComplex> GetEnumerator() {
+			return triangles.GetEnumerator();
+		}
+		IEnumerator IEnumerable.GetEnumerator() {
+			return triangles.GetEnumerator();
+		}
+		#endregion
 
 		#region IDisposable
 		public void Dispose() {
@@ -52,6 +89,7 @@ namespace M.Model {
 
 		#endregion
 
+		#region member
 		private void Rebuild() {
 			vout.Clear();
 			vin.Clear();
@@ -65,5 +103,7 @@ namespace M.Model {
 				barycentric.AddRange(t.BarycentricWeights);
 			}
 		}
+
+		#endregion
 	}
 }
