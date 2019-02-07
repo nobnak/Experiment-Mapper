@@ -8,6 +8,7 @@ namespace M.Behaviour {
 
 	[ExecuteInEditMode]
 	public class PostEffectMapperView : MonoBehaviour, IMapperView {
+		public Settings settings = new Settings();
 
 		protected Mapper mapper;
 
@@ -26,7 +27,14 @@ namespace M.Behaviour {
 				Graphics.Blit(source, destination);
 				return;
 			}
-			mapper.Update(source, destination);
+			mapper.Update(source, destination, settings.flags);
+		}
+		#endregion
+
+		#region classes
+		[System.Serializable]
+		public class Settings {
+			public Mapper.Flags flags = 0;
 		}
 		#endregion
 	}

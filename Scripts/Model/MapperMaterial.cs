@@ -7,8 +7,11 @@ using UnityEngine;
 namespace M.Model {
 
 	public class MapperMaterial : System.IDisposable {
+		public enum OutputVertexEnum { ___ = 0, OUTPUT_VIN }
 
 		public const string PATH_MATERIAL = "Mapper/Mapper";
+
+		public const string KW_OUTPUT_VIN = "OUTPUT_VIN";
 
 		public static readonly int ID_MAIN_TEX = Shader.PropertyToID("_MainTex");
 		public static readonly int ID_VERTEX_OUTPUT = Shader.PropertyToID("voutputs");
@@ -27,9 +30,14 @@ namespace M.Model {
 		public GPUList<Vector2> VertexInputs { get; set; }
 		public GPUList<int> Indices { get; set; }
 		public GPUList<Vector4> Barys { get; set; }
+		public OutputVertexEnum OutputVertex { get; set; }
 
 		public void Blit(RenderTexture src, RenderTexture dst) {
 			using (new RenderTextureActivator(dst)) {
+				mat.shaderKeywords = null;
+				if (OutputVertex != default(OutputVertexEnum))
+					mat.EnableKeyword(OutputVertex.ToString());
+
 				mat.SetTexture(ID_MAIN_TEX, src);
 				mat.SetBuffer(ID_VERTEX_OUTPUT, VertexOutputs);
 				mat.SetBuffer(ID_VERTEX_INPUT, VertexInputs);

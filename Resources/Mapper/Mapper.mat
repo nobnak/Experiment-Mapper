@@ -24,8 +24,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - _Depth: 0.5
-    - _Feature: 1
+    - _Feature: 9
     - _Wireframe_Gain: 2
     - _Wireframe_Repeat: 6
     m_Colors:
-    - _Wireframe_Color: {r: 0.9471822, g: 0, b: 1, a: 1}
+    - _Wireframe_Color: {r: 1, g: 0, b: 0.93951035, a: 1}

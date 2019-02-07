@@ -203,6 +203,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33d116d15472c4e41becdecb1a9778eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  settings:
+    flags: 0
 --- !u!114 &549392843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -232,8 +234,12 @@ MonoBehaviour:
       m_TypeName: M.Behaviour.MapperController+MapperEvent, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
   shapes:
-    triangles: []
-    quads: []
+    triangles:
+    - name: 
+    quads:
+    - name: 
+  data:
+    selectedShape: 0
 --- !u!1 &1838570083
 GameObject:
   m_ObjectHideFlags: 0

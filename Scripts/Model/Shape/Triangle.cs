@@ -6,6 +6,8 @@ using UnityEngine;
 namespace M.Model.Shape {
 	[System.Serializable]
 	public class Triangle : ITriangleComplex {
+		public string name = typeof(Triangle).Name;
+
 		public IList<Vector3> VertexOutput {
 			get {
 				return new Vector3[] {

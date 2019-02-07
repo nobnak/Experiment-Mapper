@@ -11,7 +11,10 @@ using UnityEngine;
 
 namespace M.Model {
 
-	public class Mapper : System.IDisposable, ICollection<ITriangleComplex> {
+	public class Mapper : System.IDisposable, IList<ITriangleComplex> {
+		public event System.Action<RenderTexture, RenderTexture, Flags> AfterOnUpdate;
+		[System.Flags]
+		public enum Flags { None = 0, Output_InputVertex = 1 }
 
 		public const string NAMESPACE = "M";
 
@@ -33,13 +36,17 @@ namespace M.Model {
 		}
 
 		#region interface
-		public void Update(RenderTexture src, RenderTexture dst) {
+		public void Update(RenderTexture src, RenderTexture dst, Flags flags = 0) {
 			validator.Validate();
+			SetFlags(flags);
 			mat.VertexOutputs = vout;
 			mat.VertexInputs = vin;
 			mat.Indices = indices;
 			mat.Barys = barycentric;
 			mat.Blit(src, dst);
+
+			if (AfterOnUpdate != null)
+				AfterOnUpdate(src, dst, flags);
 		}
 
 		#region ICollection<ITriangleComplex>
@@ -47,6 +54,8 @@ namespace M.Model {
 			get { return triangles.Count; }
 		}
 		public bool IsReadOnly { get { return false; } }
+
+
 		public void Add(ITriangleComplex item) {
 			validator.Invalidate();
 			triangles.Add(item);
@@ -65,11 +74,36 @@ namespace M.Model {
 			validator.Invalidate();
 			return triangles.Remove(item);
 		}
+		public ITriangleComplex this[int index] {
+			get {
+				validator.Validate();
+				return triangles[index];
+			}
+			set {
+				validator.Invalidate();
+				triangles[index] = value;
+			}
+		}
+		public int IndexOf(ITriangleComplex item) {
+			validator.Validate();
+			return triangles.IndexOf(item);
+		}
+
+		public void Insert(int index, ITriangleComplex item) {
+			validator.Invalidate();
+			triangles.Insert(index, item);
+		}
+
+		public void RemoveAt(int index) {
+			validator.Invalidate();
+			triangles.RemoveAt(index);
+		}
 		public IEnumerator<ITriangleComplex> GetEnumerator() {
 			return triangles.GetEnumerator();
 		}
+
 		IEnumerator IEnumerable.GetEnumerator() {
-			return triangles.GetEnumerator();
+			throw new System.NotImplementedException();
 		}
 		#endregion
 
@@ -99,12 +133,12 @@ namespace M.Model {
 				indices.AddRange(t.Indices.Select(i => i + offset));
 				barycentric.AddRange(t.BarycentricWeights);
 			}
-
-			Debug.LogFormat(
-				"Mapper.Rebuild:vout={0},vin={1},indices={2},bary={3}",
-				vout.Count, vin.Count, indices.Count, barycentric.Count);
 		}
-
+		private void SetFlags(Flags flags) {
+			mat.OutputVertex = ((flags & Flags.Output_InputVertex) != 0)
+				? MapperMaterial.OutputVertexEnum.OUTPUT_VIN
+				: default(MapperMaterial.OutputVertexEnum);
+		}
 		#endregion
 	}
 }

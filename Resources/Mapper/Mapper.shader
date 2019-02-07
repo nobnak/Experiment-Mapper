@@ -16,6 +16,7 @@
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma multi_compile ___ OUTPUT_VIN
 			
 			#include "UnityCG.cginc"
 			#include "Assets/Packages/Gist/CGIncludes/Wireframe.cginc"
@@ -47,7 +48,11 @@
 					uvin.y = 1 - uvin.y;
 
 				v2f o;
+				#ifdef OUTPUT_VIN
+				o.vertex = float4(vin.xy, _Depth, 1);
+				#else
 				o.vertex = vout.z * float4(vout.xy, _Depth, 1);
+				#endif
 				o.uv = uvin;
 				o.bary = bary * _Wireframe_Repeat;
 				return o;

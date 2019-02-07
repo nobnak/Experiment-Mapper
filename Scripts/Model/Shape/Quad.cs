@@ -17,6 +17,8 @@ namespace M.Model.Shape {
 			new Vector4(1, 0, 0, 1)
 		};
 
+		public string name = typeof(Quad).Name;
+
 		[SerializeField]
 		protected readonly Vector2[] input = new Vector2[4];
 		[SerializeField]
