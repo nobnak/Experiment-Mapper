@@ -34,6 +34,7 @@ namespace M.Model {
 
 		public void Blit(RenderTexture src, RenderTexture dst) {
 			using (new RenderTextureActivator(dst)) {
+
 				mat.shaderKeywords = null;
 				if (OutputVertex != default(OutputVertexEnum))
 					mat.EnableKeyword(OutputVertex.ToString());

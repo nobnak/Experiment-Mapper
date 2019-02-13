@@ -14,7 +14,11 @@ namespace M.Model {
 	public class Mapper : System.IDisposable, IList<ITriangleComplex> {
 		public event System.Action<RenderTexture, RenderTexture, Flags> AfterOnUpdate;
 		[System.Flags]
-		public enum Flags { None = 0, Output_InputVertex = 1 }
+		public enum Flags {
+			None = 0,
+			Output_InputVertex = 1 << 0,
+			Output_SrcImage = 1 << 1
+		}
 
 		public const string NAMESPACE = "M";
 
@@ -43,6 +47,9 @@ namespace M.Model {
 			mat.VertexInputs = vin;
 			mat.Indices = indices;
 			mat.Barys = barycentric;
+
+			if ((flags & Flags.Output_SrcImage) != 0)
+				Graphics.Blit(src, dst);
 			mat.Blit(src, dst);
 
 			if (AfterOnUpdate != null)

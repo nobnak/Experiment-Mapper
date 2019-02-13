@@ -18,26 +18,23 @@ namespace M.Model.Shape {
 		};
 
 		public string name = typeof(Quad).Name;
-
-		[SerializeField]
-		protected readonly Vector2[] input = new Vector2[4];
-		[SerializeField]
-		protected readonly Vector2[] output = new Vector2[4];
+		public Vector2[] input = new Vector2[]{
+			new Vector2(-0.5f, -0.5f),
+			new Vector2(-0.5f, 0.5f),
+			new Vector2(0.5f, 0.5f),
+			new Vector2(0.5f, -0.5f)
+		};
+		public Vector2[] output = new Vector2[] {
+			new Vector2(0f, 0f),
+			new Vector2(-0.5f, 1f),
+			new Vector2(1f, 1f),
+			new Vector2(1f, 0f)
+		};
 
 		protected readonly Validator validator = new Validator();
 		protected readonly Vector3[] outputParallelized = new Vector3[4];
 
 		public Quad() {
-			input[0] = new Vector2(-0.5f, -0.5f);
-			input[1] = new Vector2(-0.5f, 0.5f);
-			input[2] = new Vector2(0.5f, 0.5f);
-			input[3] = new Vector2(0.5f, -0.5f);
-
-			output[0] = new Vector2(0f, 0f);
-			output[1] = new Vector2(-0.5f, 1f);
-			output[2] = new Vector2(1f, 1f);
-			output[3] = new Vector2(1f, 0f);
-
 			validator.Validation += () => {
 				if (!output.TryBuildParallelorism(outputParallelized)) {
 					Debug.LogWarningFormat("Failed to find w on {0}", this);

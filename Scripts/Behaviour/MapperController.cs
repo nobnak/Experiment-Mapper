@@ -11,7 +11,6 @@ namespace M.Behaviour {
 	[ExecuteInEditMode]
 	public class MapperController : MonoBehaviour {
 		public Events events = new Events();
-		public Shapes shapes = new Shapes();
 
 		[SerializeField]
 		protected Data data = new Data();
@@ -65,20 +64,20 @@ namespace M.Behaviour {
 					return;
 				}
 				mapper.Clear();
-				foreach (var t in shapes.triangles)
+				foreach (var t in data.shapes.triangles)
 					mapper.Add(t);
-				foreach (var q in shapes.quads)
+				foreach (var q in data.shapes.quads)
 					mapper.Add(q);
 			};
 
 			fsmShapeSelection.StateFor(ShapeSelectionState.None).Update(f => {
-				if (0 <= data.selectedShape && data.selectedShape < shapes.Count) {
+				if (0 <= data.selectedShape && data.selectedShape < data.shapes.Count) {
 					f.Goto(ShapeSelectionState.Selected);
 					return;
 				}
 			});
 			fsmShapeSelection.StateFor(ShapeSelectionState.Selected).Update(f => {
-				if (data.selectedShape < 0 || shapes.Count <= data.selectedShape) {
+				if (data.selectedShape < 0 || data.shapes.Count <= data.selectedShape) {
 					f.Goto(ShapeSelectionState.None);
 					return;
 				}
@@ -122,6 +121,7 @@ namespace M.Behaviour {
 		[System.Serializable]
 		public class Data {
 			public int selectedShape = -1;
+			public Shapes shapes = new Shapes();
 		}
 		#endregion
 	}

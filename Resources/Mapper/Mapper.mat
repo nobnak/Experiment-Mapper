@@ -8,7 +8,7 @@ Material:
   m_PrefabInternal: {fileID: 0}
   m_Name: Mapper
   m_Shader: {fileID: 4800000, guid: 272069ac3e8e0bb4b883c642ff780f6e, type: 3}
-  m_ShaderKeywords: 
+  m_ShaderKeywords: OUTPUT_VIN
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -25,7 +25,7 @@ Material:
     m_Floats:
     - _Depth: 0.5
     - _Feature: 9
-    - _Wireframe_Gain: 2
-    - _Wireframe_Repeat: 6
+    - _Wireframe_Gain: 3
+    - _Wireframe_Repeat: 4.3
     m_Colors:
-    - _Wireframe_Color: {r: 1, g: 0, b: 0.93951035, a: 1}
+    - _Wireframe_Color: {r: 1, g: 0, b: 0.932662, a: 1}

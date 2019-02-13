@@ -204,7 +204,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings:
-    flags: 0
+    flags: 1
 --- !u!114 &549392843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -233,13 +233,31 @@ MonoBehaviour:
           m_CallState: 1
       m_TypeName: M.Behaviour.MapperController+MapperEvent, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
-  shapes:
-    triangles:
-    - name: 
-    quads:
-    - name: 
   data:
     selectedShape: 0
+    shapes:
+      triangles:
+      - name: 
+        vertexOutput:
+        - {x: -1, y: -1, z: 1}
+        - {x: -0.5, y: 0, z: 1}
+        - {x: 0, y: -1, z: 1}
+        vertexInput:
+        - {x: -1, y: 0}
+        - {x: -0.5, y: 1}
+        - {x: 0, y: 0}
+      quads:
+      - name: 
+        input:
+        - {x: -0.5, y: -0.5}
+        - {x: -0.5, y: 0.5}
+        - {x: 0.5, y: 0.5}
+        - {x: 0.5, y: -0.5}
+        output:
+        - {x: 0, y: 0}
+        - {x: -0.5, y: 1}
+        - {x: 1, y: 1}
+        - {x: 1, y: 0}
 --- !u!1 &1838570083
 GameObject:
   m_ObjectHideFlags: 0
