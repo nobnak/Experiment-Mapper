@@ -48,6 +48,9 @@ namespace M.Model {
 			mat.Indices = indices;
 			mat.Barys = barycentric;
 
+			using (new RenderTextureActivator(dst))
+				GL.Clear(true, true, Color.black);
+
 			if ((flags & Flags.Output_SrcImage) != 0)
 				Graphics.Blit(src, dst);
 			mat.Blit(src, dst);
@@ -66,10 +69,11 @@ namespace M.Model {
 		public void Add(ITriangleComplex item) {
 			validator.Invalidate();
 			triangles.Add(item);
+			item.Changed += ListenChanged;
 		}
 		public void Clear() {
-			validator.Invalidate();
-			triangles.Clear();
+			foreach (var item in triangles.ToArray())
+				Remove(item);
 		}
 		public bool Contains(ITriangleComplex item) {
 			return triangles.Contains(item);
@@ -79,6 +83,7 @@ namespace M.Model {
 		}
 		public bool Remove(ITriangleComplex item) {
 			validator.Invalidate();
+			item.Changed -= ListenChanged;
 			return triangles.Remove(item);
 		}
 		public ITriangleComplex this[int index] {
@@ -99,11 +104,16 @@ namespace M.Model {
 		public void Insert(int index, ITriangleComplex item) {
 			validator.Invalidate();
 			triangles.Insert(index, item);
+			item.Changed += ListenChanged;
 		}
 
 		public void RemoveAt(int index) {
 			validator.Invalidate();
-			triangles.RemoveAt(index);
+			var item = triangles[index];
+			if (item != null) {
+				item.Changed -= ListenChanged;
+				triangles.RemoveAt(index);
+			}
 		}
 		public IEnumerator<ITriangleComplex> GetEnumerator() {
 			return triangles.GetEnumerator();
@@ -128,7 +138,7 @@ namespace M.Model {
 		#endregion
 
 		#region member
-		private void Rebuild() {
+		protected virtual void Rebuild() {
 			vout.Clear();
 			vin.Clear();
 			indices.Clear();
@@ -141,10 +151,13 @@ namespace M.Model {
 				barycentric.AddRange(t.BarycentricWeights);
 			}
 		}
-		private void SetFlags(Flags flags) {
+		protected virtual void SetFlags(Flags flags) {
 			mat.OutputVertex = ((flags & Flags.Output_InputVertex) != 0)
 				? MapperMaterial.OutputVertexEnum.OUTPUT_VIN
 				: default(MapperMaterial.OutputVertexEnum);
+		}
+		protected virtual void ListenChanged() {
+			validator.Invalidate();
 		}
 		#endregion
 	}

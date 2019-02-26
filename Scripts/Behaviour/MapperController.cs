@@ -1,6 +1,8 @@
 using M.Model;
 using M.Model.Shape;
 using nobnak.Gist;
+using nobnak.Gist.DataUI;
+using nobnak.Gist.IMGUI.Scope;
 using nobnak.Gist.Scoped;
 using nobnak.Gist.StateMachine;
 using System.Linq;
@@ -19,6 +21,9 @@ namespace M.Behaviour {
 		protected Mapper mapper;
 		protected Validator validator = new Validator();
 		protected FSM<ShapeSelectionState> fsmShapeSelection;
+
+		protected Rect guirect = new Rect(10, 10, 200f, 300f);
+		protected TextInt guiSelectedShape;
 
 		#region member
 		protected void SetMapper(Mapper mapper) {
@@ -46,16 +51,36 @@ namespace M.Behaviour {
 				};
 			}
 		}
+		protected void Window(int id) {
+			using (new GUIChangedScope(() => { })) {
+				using (new GUILayout.VerticalScope()) {
+					guiSelectedShape.StrValue =
+						GUILayout.TextField(guiSelectedShape.StrValue);
+
+					if (0 <= data.selectedShape && data.selectedShape < mapper.Count) {
+						var shape = mapper[data.selectedShape];
+						shape.GUI();
+					}
+				}
+			}
+
+			GUI.DragWindow();
+		}
 		#endregion
 
 		#region unity
 		private void OnEnable() {
 			fsmShapeSelection = new FSM<ShapeSelectionState>(FSM.TransitionModeEnum.Immediate);
 			fig = new GLFigure();
+			guiSelectedShape = new TextInt(data.selectedShape);
 
 			SetMapper(new Mapper());
 
 			fig.DefaultLineMat.ZTestMode = GLMaterial.ZTestEnum.ALWAYS;
+			guiSelectedShape.Changed += r => {
+				validator.Invalidate();
+				data.selectedShape = r.Value;
+			};
 
 			validator.Reset();
 			validator.Validation += () => {
@@ -101,6 +126,9 @@ namespace M.Behaviour {
 			validator.Validate();
 			fsmShapeSelection.Update();
 		}
+		private void OnGUI() {
+			guirect = GUILayout.Window(GetInstanceID(), guirect, Window, "Mapper");
+		}
 		#endregion
 
 		#region classes
@@ -122,6 +150,9 @@ namespace M.Behaviour {
 		public class Data {
 			public int selectedShape = -1;
 			public Shapes shapes = new Shapes();
+		}
+
+		public class QuadGUIData {
 		}
 		#endregion
 	}

@@ -1,4 +1,5 @@
 using M.Base;
+using nobnak.Gist;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,8 +19,18 @@ namespace M.Model.Shape {
 			new Vector2(0f, 0f)
 		};
 
+		protected Validator validator = new Validator();
 
-	public IList<Vector3> VertexOutput {
+		public event System.Action Changed;
+
+		public Triangle() {
+			validator.Validation += () => {
+				Notify();
+			};
+		}
+
+		#region interface
+		public IList<Vector3> VertexOutput {
 			get {
 				return vertexOutput;
 			}
@@ -46,5 +57,16 @@ namespace M.Model.Shape {
 				};
 			}
 		}
+		public void GUI() {
+
+		}
+		#endregion
+
+		#region member
+		protected virtual void Notify() {
+			if (Changed != null)
+				Changed();
+		}
+		#endregion
 	}
 }
