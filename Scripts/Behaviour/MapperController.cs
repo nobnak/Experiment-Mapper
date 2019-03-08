@@ -1,8 +1,11 @@
+using M.Base;
+using M.Converters;
 using M.Model;
 using M.Model.Shape;
 using nobnak.Gist;
 using nobnak.Gist.DataUI;
 using nobnak.Gist.IMGUI.Scope;
+using nobnak.Gist.InputDevice;
 using nobnak.Gist.Scoped;
 using nobnak.Gist.StateMachine;
 using System.Linq;
@@ -22,8 +25,10 @@ namespace M.Behaviour {
 		protected Validator validator = new Validator();
 		protected FSM<ShapeSelectionState> fsmShapeSelection;
 
+		protected MouseTracker mouse = new MouseTracker();
 		protected Rect guirect = new Rect(10, 10, 200f, 300f);
 		protected TextInt guiSelectedShape;
+		protected TextInt guiSelectedVertices;
 
 		#region member
 		protected void SetMapper(Mapper mapper) {
@@ -39,11 +44,19 @@ namespace M.Behaviour {
 						using (new RenderTextureActivator(dst)) {
 							var shape = mapper[data.selectedShape];
 							var vertices = ((flags & Mapper.Flags.Output_InputVertex) != 0)
-								? shape.VertexInput.Select(v => (Vector3)v) 
-								: shape.VertexOutput;
-							foreach (var v in vertices) {
-								fig.DrawCircle(
-									Matrix4x4.TRS(v, Quaternion.identity, 0.1f * Vector3.one));
+								? shape.VertexInput : shape.VertexOutputRaw;
+							var width = (float)(dst != null ? dst.width : Screen.width);
+							var height = (float)(dst != null ? dst.height : Screen.height);
+							var aspect = width / height;
+							var unit = 20f / width;
+							var size = new Vector3(unit, unit * aspect, 1f);
+							for (var i = 0; i < vertices.Count; i++) {
+								var v = vertices[i];
+								var selectedVertex = (data.selectedVertices & 1 << i) != 0;
+								if (selectedVertex)
+									fig.FillCircle(Matrix4x4.TRS(v, Quaternion.identity, size));
+								else
+									fig.DrawCircle(Matrix4x4.TRS(v, Quaternion.identity, size));
 							}
 						}
 						GL.PopMatrix();
@@ -52,19 +65,26 @@ namespace M.Behaviour {
 			}
 		}
 		protected void Window(int id) {
+			var shapeSelected = 0 <= data.selectedShape && data.selectedShape < mapper.Count;
+
 			using (new GUIChangedScope(() => { })) {
 				using (new GUILayout.VerticalScope()) {
 					guiSelectedShape.StrValue =
 						GUILayout.TextField(guiSelectedShape.StrValue);
-
-					if (0 <= data.selectedShape && data.selectedShape < mapper.Count) {
-						var shape = mapper[data.selectedShape];
+					guiSelectedVertices.StrValue =
+						GUILayout.TextField(guiSelectedVertices.StrValue);
+					var shape = GetSelectedShape();
+					if (shape != null)
 						shape.GUI();
-					}
 				}
 			}
 
 			GUI.DragWindow();
+		}
+
+		private ITriangleComplex GetSelectedShape() {
+			return (0 <= data.selectedShape && data.selectedShape < mapper.Count) ?
+				mapper[data.selectedShape] : null;
 		}
 		#endregion
 
@@ -73,6 +93,7 @@ namespace M.Behaviour {
 			fsmShapeSelection = new FSM<ShapeSelectionState>(FSM.TransitionModeEnum.Immediate);
 			fig = new GLFigure();
 			guiSelectedShape = new TextInt(data.selectedShape);
+			guiSelectedVertices = new TextInt(data.selectedVertices);
 
 			SetMapper(new Mapper());
 
@@ -80,6 +101,10 @@ namespace M.Behaviour {
 			guiSelectedShape.Changed += r => {
 				validator.Invalidate();
 				data.selectedShape = r.Value;
+			};
+			guiSelectedVertices.Changed += r => {
+				validator.Invalidate();
+				data.selectedVertices = r.Value;
 			};
 
 			validator.Reset();
@@ -108,7 +133,29 @@ namespace M.Behaviour {
 				}
 			});
 			fsmShapeSelection.Init(ShapeSelectionState.None);
+
+			mouse.OnSelection += (m, arg) => {
+				if ((arg & MouseTracker.ButtonFlag.Left) == 0)
+					return;
+
+				var s2n = CoordConverter.ScreenToNDC;
+				var dx = (Vector2)s2n.MultiplyVector(m.Positiondiff);
+
+				var shape = GetSelectedShape();
+				if (shape != null) {
+					for (var i = 0; i < shape.VertexOutput.Count; i++) {
+						if ((data.selectedVertices & (1 << i)) == 0)
+							continue;
+						var v = shape.VertexOutputRaw[i];
+						v.x += dx.x;
+						v.y += dx.y;
+						shape.VertexOutputRaw[i] = v;
+					}
+					shape.Invalidate();
+				}
+			};
 		}
+
 		private void OnDisable() {
 			if (mapper != null) {
 				mapper.Dispose();
@@ -125,6 +172,7 @@ namespace M.Behaviour {
 		private void Update() {
 			validator.Validate();
 			fsmShapeSelection.Update();
+			mouse.Update();
 		}
 		private void OnGUI() {
 			guirect = GUILayout.Window(GetInstanceID(), guirect, Window, "Mapper");
@@ -149,10 +197,8 @@ namespace M.Behaviour {
 		[System.Serializable]
 		public class Data {
 			public int selectedShape = -1;
+			public int selectedVertices = 0;
 			public Shapes shapes = new Shapes();
-		}
-
-		public class QuadGUIData {
 		}
 		#endregion
 	}

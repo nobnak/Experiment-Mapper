@@ -80,6 +80,12 @@ namespace M.Model.Shape {
 				return outputParallelized;
 			}
 		}
+		public IList<Vector2> VertexOutputRaw {
+			get {
+				validator.Validate();
+				return output;
+			}
+		}
 		public IList<Vector2> VertexInput {
 			get {
 				validator.Validate();
@@ -109,6 +115,9 @@ namespace M.Model.Shape {
 							text[j] = GUILayout.TextField(text[j]);
 				}
 			}
+		}
+		public void Invalidate() {
+			validator.Invalidate();
 		}
 		#endregion
 

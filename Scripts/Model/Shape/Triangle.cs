@@ -8,10 +8,10 @@ namespace M.Model.Shape {
 	[System.Serializable]
 	public class Triangle : ITriangleComplex {
 		public string name = typeof(Triangle).Name;
-		public Vector3[] vertexOutput = new Vector3[] {
-			new Vector3(-1f, -1f, 1f),
-			new Vector3(-0.5f, 0f, 1f),
-			new Vector3(0f, -1f, 1f)
+		public Vector2[] vertexOutput = new Vector2[] {
+			new Vector2(-1f, -1f),
+			new Vector2(-0.5f, 0f),
+			new Vector2(0f, -1f)
 		};
 		public Vector2[] vertexInput = new Vector2[] {
 			new Vector2(-1f, 0f),
@@ -20,11 +20,16 @@ namespace M.Model.Shape {
 		};
 
 		protected Validator validator = new Validator();
+		protected readonly Vector3[] vertexOutputParallelized = new Vector3[3];
 
 		public event System.Action Changed;
 
 		public Triangle() {
 			validator.Validation += () => {
+				for (var i = 0; i < vertexOutput.Length; i++) {
+					var v = vertexOutput[i];
+					vertexOutputParallelized[i] = new Vector3(v.x, v.y, 1f);
+				}
 				Notify();
 			};
 		}
@@ -32,10 +37,16 @@ namespace M.Model.Shape {
 		#region interface
 		public IList<Vector3> VertexOutput {
 			get {
+				validator.Validate();
+				return vertexOutputParallelized;
+			}
+		}
+		public IList<Vector2> VertexOutputRaw {
+			get {
+				validator.Validate();
 				return vertexOutput;
 			}
 		}
-
 		public IList<Vector2> VertexInput {
 			get {
 				return vertexInput;
@@ -59,6 +70,9 @@ namespace M.Model.Shape {
 		}
 		public void GUI() {
 
+		}
+		public void Invalidate() {
+			validator.Invalidate();
 		}
 		#endregion
 

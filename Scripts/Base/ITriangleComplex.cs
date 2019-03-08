@@ -8,10 +8,12 @@ namespace M.Base {
 		event System.Action Changed;
 
 		IList<Vector3> VertexOutput { get; }
+		IList<Vector2> VertexOutputRaw { get; }
 		IList<Vector2> VertexInput { get; }
 		IList<int> Indices { get; }
 		IList<Vector4> BarycentricWeights { get; }
 
 		void GUI();
+		void Invalidate();
 	}
 }
