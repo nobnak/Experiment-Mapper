@@ -12,9 +12,9 @@ using UnityEngine;
 namespace M.Model {
 
 	public class Mapper : System.IDisposable, IList<ITriangleComplex> {
-		public event System.Action<RenderTexture, RenderTexture, Flags> AfterOnUpdate;
+		public event System.Action<RenderTexture, RenderTexture, FlagOutputVertex> AfterOnUpdate;
 		[System.Flags]
-		public enum Flags {
+		public enum FlagOutputVertex {
 			None = 0,
 			Output_InputVertex = 1 << 0,
 			Output_SrcImage = 1 << 1
@@ -40,23 +40,24 @@ namespace M.Model {
 		}
 
 		#region interface
-		public void Update(RenderTexture src, RenderTexture dst, Flags flags = 0) {
+		public void Update(RenderTexture src, RenderTexture dst, Color clearColor = default(Color)) {
 			validator.Validate();
-			SetFlags(flags);
+			SetFlags(CurrFlags);
+			mat.Feature = CurrFeature;
 			mat.VertexOutputs = vout;
 			mat.VertexInputs = vin;
 			mat.Indices = indices;
 			mat.Barys = barycentric;
 
 			using (new RenderTextureActivator(dst))
-				GL.Clear(true, true, Color.black);
+				GL.Clear(true, true, clearColor);
 
-			if ((flags & Flags.Output_SrcImage) != 0)
+			if ((CurrFlags & FlagOutputVertex.Output_SrcImage) != 0)
 				Graphics.Blit(src, dst);
 			mat.Blit(src, dst);
 
 			if (AfterOnUpdate != null)
-				AfterOnUpdate(src, dst, flags);
+				AfterOnUpdate(src, dst, CurrFlags);
 		}
 
 		#region ICollection<ITriangleComplex>
@@ -64,7 +65,8 @@ namespace M.Model {
 			get { return triangles.Count; }
 		}
 		public bool IsReadOnly { get { return false; } }
-
+		public FlagOutputVertex CurrFlags { get; set; }
+		public MapperMaterial.FeatureEnum CurrFeature { get; set; }
 
 		public void Add(ITriangleComplex item) {
 			validator.Invalidate();
@@ -151,10 +153,10 @@ namespace M.Model {
 				barycentric.AddRange(t.BarycentricWeights);
 			}
 		}
-		protected virtual void SetFlags(Flags flags) {
-			mat.OutputVertex = ((flags & Flags.Output_InputVertex) != 0)
-				? MapperMaterial.OutputVertexEnum.OUTPUT_VIN
-				: default(MapperMaterial.OutputVertexEnum);
+		protected virtual void SetFlags(FlagOutputVertex flags) {
+			mat.OutputVertex = ((flags & FlagOutputVertex.Output_InputVertex) != 0)
+				? MapperMaterial.KwOutputVertexEnum.OUTPUT_VIN
+				: default(MapperMaterial.KwOutputVertexEnum);
 		}
 		protected virtual void ListenChanged() {
 			validator.Invalidate();

@@ -7,9 +7,8 @@ using UnityEngine;
 namespace M.Behaviour {
 
 	[ExecuteInEditMode]
+	[RequireComponent(typeof(Camera))]
 	public class PostEffectMapperView : MonoBehaviour, IMapperView {
-		public Settings settings = new Settings();
-
 		protected Mapper mapper;
 
 		#region interface
@@ -27,14 +26,7 @@ namespace M.Behaviour {
 				Graphics.Blit(source, destination);
 				return;
 			}
-			mapper.Update(source, destination, settings.flags);
-		}
-		#endregion
-
-		#region classes
-		[System.Serializable]
-		public class Settings {
-			public Mapper.Flags flags = 0;
+			mapper.Update(source, destination, Camera.current.backgroundColor);
 		}
 		#endregion
 	}

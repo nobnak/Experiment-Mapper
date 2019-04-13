@@ -19,6 +19,8 @@ namespace M.Behaviour {
 
 		[SerializeField]
 		protected Data data = new Data();
+		[SerializeField]
+		protected GUIData gui = new GUIData();
 
 		protected GLFigure fig;
 		protected Mapper mapper;
@@ -26,9 +28,10 @@ namespace M.Behaviour {
 		protected FSM<ShapeSelectionState> fsmShapeSelection;
 
 		protected MouseTracker mouse = new MouseTracker();
-		protected Rect guirect = new Rect(10, 10, 200f, 300f);
+		protected Rect guirect = new Rect(10, 10, 300f, 300f);
 		protected TextInt guiSelectedShape;
 		protected TextInt guiSelectedVertices;
+		protected Reactive<VisTargetEnum> rctVisTarget;
 
 		#region member
 		protected void SetMapper(Mapper mapper) {
@@ -36,15 +39,14 @@ namespace M.Behaviour {
 			events.MapperOnChanged.Invoke(mapper);
 			if (mapper != null) {
 				mapper.AfterOnUpdate += (src, dst, flags) => {
-					if (0 <= data.selectedShape && data.selectedShape < mapper.Count) {
+					if (gui.toggle && 0 <= gui.selectedShape && gui.selectedShape < mapper.Count) {
 						GL.PushMatrix();
 						GL.LoadIdentity();
 						GL.LoadProjectionMatrix(Matrix4x4.identity);
 						fig.CurrentColor = Color.cyan;
 						using (new RenderTextureActivator(dst)) {
-							var shape = mapper[data.selectedShape];
-							var vertices = ((flags & Mapper.Flags.Output_InputVertex) != 0)
-								? shape.VertexInput : shape.VertexOutputRaw;
+							var shape = mapper[gui.selectedShape];
+							var vertices = GetVertices(shape);
 							var width = (float)(dst != null ? dst.width : Screen.width);
 							var height = (float)(dst != null ? dst.height : Screen.height);
 							var aspect = width / height;
@@ -52,7 +54,7 @@ namespace M.Behaviour {
 							var size = new Vector3(unit, unit * aspect, 1f);
 							for (var i = 0; i < vertices.Count; i++) {
 								var v = vertices[i];
-								var selectedVertex = (data.selectedVertices & 1 << i) != 0;
+								var selectedVertex = (gui.selectedVertices & 1 << i) != 0;
 								if (selectedVertex)
 									fig.FillCircle(Matrix4x4.TRS(v, Quaternion.identity, size));
 								else
@@ -64,15 +66,38 @@ namespace M.Behaviour {
 				};
 			}
 		}
+
+		protected System.Collections.Generic.IList<Vector2> GetVertices(ITriangleComplex shape) {
+			return rctVisTarget.Value == VisTargetEnum.Input ? shape.VertexInput : shape.VertexOutputRaw;
+		}
+
 		protected void Window(int id) {
-			var shapeSelected = 0 <= data.selectedShape && data.selectedShape < mapper.Count;
+			var shapeSelected = 0 <= gui.selectedShape && gui.selectedShape < mapper.Count;
 
 			using (new GUIChangedScope(() => { })) {
 				using (new GUILayout.VerticalScope()) {
-					guiSelectedShape.StrValue =
-						GUILayout.TextField(guiSelectedShape.StrValue);
-					guiSelectedVertices.StrValue =
-						GUILayout.TextField(guiSelectedVertices.StrValue);
+					GUILayout.Label("Edit target");
+					rctVisTarget.Value = VIS_TARGET_ENUM_VALUES[GUILayout.SelectionGrid(
+						(int)rctVisTarget.Value,
+						VIS_TARGET_ENUM_NAMES, VIS_TARGET_ENUM_NAMES.Length)];
+
+					using (new GUILayout.HorizontalScope()) {
+						GUILayout.Label("Selected shape");
+						if (GUILayout.Button("<"))
+							guiSelectedShape.Value--;
+						if (GUILayout.Button(">"))
+							guiSelectedShape.Value++;
+					}
+					guiSelectedShape.StrValue = GUILayout.TextField(guiSelectedShape.StrValue);
+
+					using (new GUILayout.HorizontalScope()) {
+						GUILayout.Label("Selected vertices");
+						if (GUILayout.Button("Clear"))
+							guiSelectedVertices.Value = 0;
+						if (GUILayout.Button("All"))
+							guiSelectedVertices.Value = -1;
+					}
+					guiSelectedVertices.StrValue = GUILayout.TextField(guiSelectedVertices.StrValue);
 					var shape = GetSelectedShape();
 					if (shape != null)
 						shape.GUI();
@@ -83,8 +108,8 @@ namespace M.Behaviour {
 		}
 
 		private ITriangleComplex GetSelectedShape() {
-			return (0 <= data.selectedShape && data.selectedShape < mapper.Count) ?
-				mapper[data.selectedShape] : null;
+			return (0 <= gui.selectedShape && gui.selectedShape < mapper.Count) ?
+				mapper[gui.selectedShape] : null;
 		}
 		#endregion
 
@@ -92,19 +117,25 @@ namespace M.Behaviour {
 		private void OnEnable() {
 			fsmShapeSelection = new FSM<ShapeSelectionState>(FSM.TransitionModeEnum.Immediate);
 			fig = new GLFigure();
-			guiSelectedShape = new TextInt(data.selectedShape);
-			guiSelectedVertices = new TextInt(data.selectedVertices);
+			guiSelectedShape = new TextInt(gui.selectedShape);
+			guiSelectedVertices = new TextInt(gui.selectedVertices);
+			rctVisTarget = new Reactive<VisTargetEnum>();
 
 			SetMapper(new Mapper());
 
 			fig.DefaultLineMat.ZTestMode = GLMaterial.ZTestEnum.ALWAYS;
 			guiSelectedShape.Changed += r => {
 				validator.Invalidate();
-				data.selectedShape = r.Value;
+				gui.selectedShape = r.Value;
 			};
 			guiSelectedVertices.Changed += r => {
 				validator.Invalidate();
-				data.selectedVertices = r.Value;
+				gui.selectedVertices = r.Value;
+			};
+			rctVisTarget.Changed += r => {
+				mapper.CurrFlags = r.Value == VisTargetEnum.Input ?
+					Mapper.FlagOutputVertex.Output_InputVertex | Mapper.FlagOutputVertex.Output_SrcImage :
+					Mapper.FlagOutputVertex.None;
 			};
 
 			validator.Reset();
@@ -114,20 +145,18 @@ namespace M.Behaviour {
 					return;
 				}
 				mapper.Clear();
-				foreach (var t in data.shapes.triangles)
-					mapper.Add(t);
 				foreach (var q in data.shapes.quads)
 					mapper.Add(q);
 			};
 
 			fsmShapeSelection.StateFor(ShapeSelectionState.None).Update(f => {
-				if (0 <= data.selectedShape && data.selectedShape < data.shapes.Count) {
+				if (0 <= gui.selectedShape && gui.selectedShape < data.shapes.Count) {
 					f.Goto(ShapeSelectionState.Selected);
 					return;
 				}
 			});
 			fsmShapeSelection.StateFor(ShapeSelectionState.Selected).Update(f => {
-				if (data.selectedShape < 0 || data.shapes.Count <= data.selectedShape) {
+				if (gui.selectedShape < 0 || data.shapes.Count <= gui.selectedShape) {
 					f.Goto(ShapeSelectionState.None);
 					return;
 				}
@@ -143,13 +172,14 @@ namespace M.Behaviour {
 
 				var shape = GetSelectedShape();
 				if (shape != null) {
-					for (var i = 0; i < shape.VertexOutput.Count; i++) {
-						if ((data.selectedVertices & (1 << i)) == 0)
+					var vertices = GetVertices(shape);
+					for (var i = 0; i < vertices.Count; i++) {
+						if ((gui.selectedVertices & (1 << i)) == 0)
 							continue;
-						var v = shape.VertexOutputRaw[i];
+						var v = vertices[i];
 						v.x += dx.x;
 						v.y += dx.y;
-						shape.VertexOutputRaw[i] = v;
+						vertices[i] = v;
 					}
 					shape.Invalidate();
 				}
@@ -173,9 +203,11 @@ namespace M.Behaviour {
 			validator.Validate();
 			fsmShapeSelection.Update();
 			mouse.Update();
+			gui.toggle.Update();
 		}
 		private void OnGUI() {
-			guirect = GUILayout.Window(GetInstanceID(), guirect, Window, "Mapper");
+			if (gui.toggle)
+				guirect = GUILayout.Window(GetInstanceID(), guirect, Window, "Mapper");
 		}
 		#endregion
 
@@ -188,17 +220,27 @@ namespace M.Behaviour {
 		}
 		[System.Serializable]
 		public class Shapes {
-			public Triangle[] triangles = new Triangle[0];
 			public Quad[] quads = new Quad[0];
 
-			public int Count { get { return triangles.Length + quads.Length; } }
+			public int Count { get { return quads.Length; } }
 		}
 		public enum ShapeSelectionState { None = 0, Selected }
+		public enum VisTargetEnum { Output = 0, Input }
+		#region VisTargetEnum consts
+		public static readonly string[] VIS_TARGET_ENUM_NAMES = System.Enum.GetNames(typeof(VisTargetEnum));
+		public static readonly VisTargetEnum[] VIS_TARGET_ENUM_VALUES = (VisTargetEnum[])System.Enum.GetValues(typeof(VisTargetEnum));
+		#endregion
 		[System.Serializable]
 		public class Data {
+			public MapperMaterial.FeatureEnum feature = MapperMaterial.FeatureEnum.SRC;
+			public Shapes shapes = new Shapes();
+		}
+		[System.Serializable]
+		public class GUIData {
+			public KeycodeToggle toggle = new KeycodeToggle(KeyCode.M);
 			public int selectedShape = -1;
 			public int selectedVertices = 0;
-			public Shapes shapes = new Shapes();
+
 		}
 		#endregion
 	}

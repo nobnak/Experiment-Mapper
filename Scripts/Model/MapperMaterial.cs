@@ -7,7 +7,8 @@ using UnityEngine;
 namespace M.Model {
 
 	public class MapperMaterial : System.IDisposable {
-		public enum OutputVertexEnum { ___ = 0, OUTPUT_VIN }
+		public enum KwOutputVertexEnum { ___ = 0, OUTPUT_VIN }
+		public enum FeatureEnum { None = 0, SRC, UV, WIREFRAME }
 
 		public const string PATH_MATERIAL = "Mapper/Mapper";
 
@@ -18,6 +19,7 @@ namespace M.Model {
 		public static readonly int ID_VERTEX_INPUT = Shader.PropertyToID("vinputs");
 		public static readonly int ID_INDICES = Shader.PropertyToID("indices");
 		public static readonly int ID_BARY_WEIGHTS = Shader.PropertyToID("barys");
+		public static readonly int ID_Feature = Shader.PropertyToID("_Feature");
 
 		protected Material mat;
 
@@ -30,13 +32,14 @@ namespace M.Model {
 		public GPUList<Vector2> VertexInputs { get; set; }
 		public GPUList<int> Indices { get; set; }
 		public GPUList<Vector4> Barys { get; set; }
-		public OutputVertexEnum OutputVertex { get; set; }
+		public KwOutputVertexEnum OutputVertex { get; set; }
+		public FeatureEnum Feature { get; set; }
 
 		public void Blit(RenderTexture src, RenderTexture dst) {
 			using (new RenderTextureActivator(dst)) {
 
 				mat.shaderKeywords = null;
-				if (OutputVertex != default(OutputVertexEnum))
+				if (OutputVertex != default(KwOutputVertexEnum))
 					mat.EnableKeyword(OutputVertex.ToString());
 
 				mat.SetTexture(ID_MAIN_TEX, src);
@@ -44,6 +47,7 @@ namespace M.Model {
 				mat.SetBuffer(ID_VERTEX_INPUT, VertexInputs);
 				mat.SetBuffer(ID_INDICES, Indices);
 				mat.SetBuffer(ID_BARY_WEIGHTS, Barys);
+				//mat.SetInt(ID_Feature, (int)Feature);
 				mat.SetPass(0);
 				Graphics.DrawProcedural(MeshTopology.Triangles, Indices.Count);
 			}

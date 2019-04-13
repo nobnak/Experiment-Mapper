@@ -220,7 +220,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 1, g: 1, b: 1, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_SensorSize: {x: 36, y: 24}
   m_LensShift: {x: 0, y: 0}
@@ -275,8 +275,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33d116d15472c4e41becdecb1a9778eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settings:
-    flags: 0
 --- !u!114 &549392843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -306,21 +304,10 @@ MonoBehaviour:
       m_TypeName: M.Behaviour.MapperController+MapperEvent, Assembly-CSharp, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
   data:
-    selectedShape: 1
+    feature: 1
     shapes:
-      triangles:
-      - name: 
-        vertexOutput:
-        - {x: -1, y: -1, z: 1}
-        - {x: -0.5, y: 0, z: 1}
-        - {x: 0, y: -1, z: 1}
-        vertexInput:
-        - {x: -1, y: 0}
-        - {x: -0.5, y: 1}
-        - {x: 0, y: 0}
       quads:
-      - name: 
-        input:
+      - input:
         - {x: -0.5, y: -0.5}
         - {x: -0.5, y: 0.5}
         - {x: 0.5, y: 0.5}
@@ -330,6 +317,12 @@ MonoBehaviour:
         - {x: -0.5, y: 1}
         - {x: 1, y: 1}
         - {x: 1, y: 0}
+  gui:
+    toggle:
+      key: 109
+      guiVisible: 1
+    selectedShape: -1
+    selectedVertices: 0
 --- !u!1 &1838570083
 GameObject:
   m_ObjectHideFlags: 0
