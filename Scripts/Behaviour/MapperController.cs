@@ -67,7 +67,7 @@ namespace M.Behaviour {
 			}
 		}
 
-		protected System.Collections.Generic.IList<Vector2> GetVertices(ITriangleComplex shape) {
+		protected System.Collections.Generic.IList<Vector2> GetVertices(BaseTriangleComplex shape) {
 			return rctVisTarget.Value == VisTargetEnum.Input ? shape.VertexInput : shape.VertexOutputRaw;
 		}
 
@@ -79,14 +79,14 @@ namespace M.Behaviour {
 
 				using (new GUILayout.VerticalScope()) {
 					using (new GUILayout.HorizontalScope()) {
-						GUILayout.Label("Edit target");
+						GUILayout.Label("Edit target", GUILayout.ExpandWidth(false));
 						rctVisTarget.Value = VIS_TARGET_ENUM_VALUES[GUILayout.SelectionGrid(
 							(int)rctVisTarget.Value,
 							VIS_TARGET_ENUM_NAMES, VIS_TARGET_ENUM_NAMES.Length)];
 					}
 
 					using (new GUILayout.HorizontalScope()) {
-						GUILayout.Label("Visual");
+						GUILayout.Label("Visual", GUILayout.ExpandWidth(false));
 						var flags = mapper.CurrFeature;
 						var fuv = (flags & MapperMaterial.FeatureEnum.UV) != 0;
 						var fgrid = (flags & MapperMaterial.FeatureEnum.WIREFRAME) != 0;
@@ -98,21 +98,14 @@ namespace M.Behaviour {
 							| MapperMaterial.FeatureEnum.WIREFRAME))
 							| (fuv ? MapperMaterial.FeatureEnum.UV : MapperMaterial.FeatureEnum.IMAGE)
 							| (fgrid ? MapperMaterial.FeatureEnum.WIREFRAME : 0);
-						Debug.LogFormat("Feature : {0}", flags);
-						mapper.CurrFeature = flags; // (MapperMaterial.FeatureEnum)9;
+						mapper.CurrFeature = flags;
 					}
 
-					using (new GUILayout.HorizontalScope()) {
-						GUILayout.Label("Selected shape");
-						if (GUILayout.Button("<"))
-							guiSelectedShape.Value--;
-						if (GUILayout.Button(">"))
-							guiSelectedShape.Value++;
-					}
-					guiSelectedShape.StrValue = GUILayout.TextField(guiSelectedShape.StrValue);
+					GUILayout.Space(20);
 
 					using (new GUILayout.HorizontalScope()) {
-						GUILayout.Label("Selected vertices");
+						GUILayout.Label(string.Format("Selected vertices:{0}", guiSelectedVertices.StrValue),
+							GUILayout.ExpandWidth(false));
 						if (GUILayout.Button("Clear"))
 							guiSelectedVertices.Value = 0;
 						if (GUILayout.Button("All"))
@@ -123,13 +116,24 @@ namespace M.Behaviour {
 						if (shape != null) {
 							for (var i = 0; i < shape.VertexOutputRaw.Count; i++) {
 								var bit = 1 << i;
-								var enabled = GUILayout.Toggle((flags & bit) != 0, string.Format("v{0}", i), GUILayout.ExpandWidth(false));
+								var enabled = GUILayout.Toggle((flags & bit) != 0, string.Format("v{0}", i));
 								flags = (flags & ~bit) | (enabled ? bit : 0);
 							}
 						}
 						guiSelectedVertices.Value = flags;
-						guiSelectedVertices.StrValue = GUILayout.TextField(guiSelectedVertices.StrValue);
 					}
+
+					GUILayout.Space(20);
+
+					using (new GUILayout.HorizontalScope()) {
+						GUILayout.Label("Selected shape", GUILayout.ExpandWidth(false));
+						guiSelectedShape.StrValue = GUILayout.TextField(guiSelectedShape.StrValue);
+						if (GUILayout.Button("<"))
+							guiSelectedShape.Value--;
+						if (GUILayout.Button(">"))
+							guiSelectedShape.Value++;
+					}
+
 					if (shape != null)
 						shape.GUI();
 				}
@@ -138,7 +142,7 @@ namespace M.Behaviour {
 			GUI.DragWindow();
 		}
 
-		private ITriangleComplex GetSelectedShape() {
+		private BaseTriangleComplex GetSelectedShape() {
 			return (0 <= gui.selectedShape && gui.selectedShape < mapper.Count) ?
 				mapper[gui.selectedShape] : null;
 		}

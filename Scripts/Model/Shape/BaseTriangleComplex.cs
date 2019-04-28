@@ -9,9 +9,10 @@ using UnityEngine;
 
 namespace M.Model.Shape {
 	[System.Serializable]
-	public abstract class BaseTriangleComplex : ITriangleComplex {
+	public abstract class BaseTriangleComplex {
 		public event System.Action Changed;
 
+		public string name = "Default name";
 		public Vector2[] input;
 		public Vector2[] output;
 
@@ -26,9 +27,9 @@ namespace M.Model.Shape {
 			this.output = output;
 
 			outputParallelized = new Vector3[output.Length];
-
 			inputTexts = new TextVector2[input.Length];
 			outputTexts = new TextVector2[output.Length];
+
 			for (var i = 0; i < inputTexts.Length; i++) {
 				var curr = i;
 				inputTexts[curr] = new TextVector2(input[curr]);
@@ -43,6 +44,13 @@ namespace M.Model.Shape {
 					output[curr] = outputTexts[curr].Value;
 				};
 			}
+
+			validator.Validation += () => {
+				for (var i = 0; i < inputTexts.Length; i++) {
+					inputTexts[i].Value = input[i];
+					outputTexts[i].Value = output[i];
+				}
+			};
 		}
 
 		#region interface
@@ -80,19 +88,27 @@ namespace M.Model.Shape {
 
 		public virtual void GUI() {
 			using (new GUILayout.VerticalScope()) {
-				GUILayout.Label("Input");
+				using (new GUILayout.HorizontalScope()) {
+					GUILayout.Label("Name:", GUILayout.ExpandWidth(false));
+					name = GUILayout.TextField(name);
+				}
+				GUILayout.Label("Input:");
 				for (var i = 0; i < inputTexts.Length; i++) {
 					var text = inputTexts[i];
-					using (new GUILayout.HorizontalScope())
+					using (new GUILayout.HorizontalScope()) {
+						GUILayout.Label(string.Format("v{0}", i), GUILayout.ExpandWidth(false));
 						for (var j = 0; j < 2; j++)
 							text[j] = GUILayout.TextField(text[j]);
+					}
 				}
-				GUILayout.Label("Output");
+				GUILayout.Label("Output:");
 				for (var i = 0; i < outputTexts.Length; i++) {
 					var text = outputTexts[i];
-					using (new GUILayout.HorizontalScope())
+					using (new GUILayout.HorizontalScope()) {
+						GUILayout.Label(string.Format("v{0}", i), GUILayout.ExpandWidth(false));
 						for (var j = 0; j < 2; j++)
 							text[j] = GUILayout.TextField(text[j]);
+					}
 				}
 			}
 		}

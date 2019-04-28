@@ -1,4 +1,3 @@
-using M.Base;
 using M.Model.Shape;
 using nobnak.Gist;
 using nobnak.Gist.Extensions.Array;
@@ -11,7 +10,7 @@ using UnityEngine;
 
 namespace M.Model {
 
-	public class Mapper : System.IDisposable, IList<ITriangleComplex> {
+	public class Mapper : System.IDisposable, IList<BaseTriangleComplex> {
 		public event System.Action<RenderTexture, RenderTexture, FlagOutputVertex> AfterOnUpdate;
 		[System.Flags]
 		public enum FlagOutputVertex {
@@ -29,12 +28,12 @@ namespace M.Model {
 		protected GPUList<Vector4> barycentric = new GPUList<Vector4>();
 
 		protected Validator validator = new Validator();
-		protected List<ITriangleComplex> triangles = new List<ITriangleComplex>();
+		protected List<BaseTriangleComplex> triangles = new List<BaseTriangleComplex>();
 
 		public Mapper() {
 			mat = new MapperMaterial();
 
-			CurrFeature = MapperMaterial.FeatureEnum.IMAGE;
+			CurrFeature = MapperMaterial.FeatureEnum.IMAGE | MapperMaterial.FeatureEnum.WIREFRAME;
 
 			validator.Validation += () => {
 				Rebuild();
@@ -70,7 +69,7 @@ namespace M.Model {
 		public FlagOutputVertex CurrFlags { get; set; }
 		public MapperMaterial.FeatureEnum CurrFeature { get; set; }
 
-		public void Add(ITriangleComplex item) {
+		public void Add(BaseTriangleComplex item) {
 			validator.Invalidate();
 			triangles.Add(item);
 			item.Changed += ListenChanged;
@@ -79,18 +78,18 @@ namespace M.Model {
 			foreach (var item in triangles.ToArray())
 				Remove(item);
 		}
-		public bool Contains(ITriangleComplex item) {
+		public bool Contains(BaseTriangleComplex item) {
 			return triangles.Contains(item);
 		}
-		public void CopyTo(ITriangleComplex[] array, int arrayIndex) {
+		public void CopyTo(BaseTriangleComplex[] array, int arrayIndex) {
 			triangles.CopyTo(array, arrayIndex);
 		}
-		public bool Remove(ITriangleComplex item) {
+		public bool Remove(BaseTriangleComplex item) {
 			validator.Invalidate();
 			item.Changed -= ListenChanged;
 			return triangles.Remove(item);
 		}
-		public ITriangleComplex this[int index] {
+		public BaseTriangleComplex this[int index] {
 			get {
 				validator.Validate();
 				return triangles[index];
@@ -100,12 +99,12 @@ namespace M.Model {
 				triangles[index] = value;
 			}
 		}
-		public int IndexOf(ITriangleComplex item) {
+		public int IndexOf(BaseTriangleComplex item) {
 			validator.Validate();
 			return triangles.IndexOf(item);
 		}
 
-		public void Insert(int index, ITriangleComplex item) {
+		public void Insert(int index, BaseTriangleComplex item) {
 			validator.Invalidate();
 			triangles.Insert(index, item);
 			item.Changed += ListenChanged;
@@ -119,7 +118,7 @@ namespace M.Model {
 				triangles.RemoveAt(index);
 			}
 		}
-		public IEnumerator<ITriangleComplex> GetEnumerator() {
+		public IEnumerator<BaseTriangleComplex> GetEnumerator() {
 			return triangles.GetEnumerator();
 		}
 
