@@ -34,6 +34,8 @@ namespace M.Model {
 		public Mapper() {
 			mat = new MapperMaterial();
 
+			CurrFeature = MapperMaterial.FeatureEnum.IMAGE;
+
 			validator.Validation += () => {
 				Rebuild();
 			};

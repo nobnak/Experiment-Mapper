@@ -75,11 +75,32 @@ namespace M.Behaviour {
 			var shapeSelected = 0 <= gui.selectedShape && gui.selectedShape < mapper.Count;
 
 			using (new GUIChangedScope(() => { })) {
+				var shape = GetSelectedShape();
+
 				using (new GUILayout.VerticalScope()) {
-					GUILayout.Label("Edit target");
-					rctVisTarget.Value = VIS_TARGET_ENUM_VALUES[GUILayout.SelectionGrid(
-						(int)rctVisTarget.Value,
-						VIS_TARGET_ENUM_NAMES, VIS_TARGET_ENUM_NAMES.Length)];
+					using (new GUILayout.HorizontalScope()) {
+						GUILayout.Label("Edit target");
+						rctVisTarget.Value = VIS_TARGET_ENUM_VALUES[GUILayout.SelectionGrid(
+							(int)rctVisTarget.Value,
+							VIS_TARGET_ENUM_NAMES, VIS_TARGET_ENUM_NAMES.Length)];
+					}
+
+					using (new GUILayout.HorizontalScope()) {
+						GUILayout.Label("Visual");
+						var flags = mapper.CurrFeature;
+						var fuv = (flags & MapperMaterial.FeatureEnum.UV) != 0;
+						var fgrid = (flags & MapperMaterial.FeatureEnum.WIREFRAME) != 0;
+						fuv = GUILayout.Toggle(fuv, "UV");
+						fgrid = GUILayout.Toggle(fgrid, "Grid");
+						flags = (flags & ~(
+							MapperMaterial.FeatureEnum.IMAGE
+							| MapperMaterial.FeatureEnum.UV
+							| MapperMaterial.FeatureEnum.WIREFRAME))
+							| (fuv ? MapperMaterial.FeatureEnum.UV : MapperMaterial.FeatureEnum.IMAGE)
+							| (fgrid ? MapperMaterial.FeatureEnum.WIREFRAME : 0);
+						Debug.LogFormat("Feature : {0}", flags);
+						mapper.CurrFeature = flags; // (MapperMaterial.FeatureEnum)9;
+					}
 
 					using (new GUILayout.HorizontalScope()) {
 						GUILayout.Label("Selected shape");
@@ -97,8 +118,18 @@ namespace M.Behaviour {
 						if (GUILayout.Button("All"))
 							guiSelectedVertices.Value = -1;
 					}
-					guiSelectedVertices.StrValue = GUILayout.TextField(guiSelectedVertices.StrValue);
-					var shape = GetSelectedShape();
+					using (new GUILayout.HorizontalScope()) {
+						var flags = guiSelectedVertices.Value;
+						if (shape != null) {
+							for (var i = 0; i < shape.VertexOutputRaw.Count; i++) {
+								var bit = 1 << i;
+								var enabled = GUILayout.Toggle((flags & bit) != 0, string.Format("v{0}", i), GUILayout.ExpandWidth(false));
+								flags = (flags & ~bit) | (enabled ? bit : 0);
+							}
+						}
+						guiSelectedVertices.Value = flags;
+						guiSelectedVertices.StrValue = GUILayout.TextField(guiSelectedVertices.StrValue);
+					}
 					if (shape != null)
 						shape.GUI();
 				}
@@ -232,7 +263,7 @@ namespace M.Behaviour {
 		#endregion
 		[System.Serializable]
 		public class Data {
-			public MapperMaterial.FeatureEnum feature = MapperMaterial.FeatureEnum.SRC;
+			public MapperMaterial.FeatureEnum feature = MapperMaterial.FeatureEnum.IMAGE;
 			public Shapes shapes = new Shapes();
 		}
 		[System.Serializable]

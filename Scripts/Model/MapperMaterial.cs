@@ -8,7 +8,12 @@ namespace M.Model {
 
 	public class MapperMaterial : System.IDisposable {
 		public enum KwOutputVertexEnum { ___ = 0, OUTPUT_VIN }
-		public enum FeatureEnum { None = 0, SRC, UV, WIREFRAME }
+		public enum FeatureEnum {
+			None = 0,
+			IMAGE = 1 << 0,
+			UV = 1 << 2,
+			WIREFRAME = 1 << 3
+		}
 
 		public const string PATH_MATERIAL = "Mapper/Mapper";
 
@@ -47,7 +52,7 @@ namespace M.Model {
 				mat.SetBuffer(ID_VERTEX_INPUT, VertexInputs);
 				mat.SetBuffer(ID_INDICES, Indices);
 				mat.SetBuffer(ID_BARY_WEIGHTS, Barys);
-				//mat.SetInt(ID_Feature, (int)Feature);
+				mat.SetInt(ID_Feature, (int)Feature);
 				mat.SetPass(0);
 				Graphics.DrawProcedural(MeshTopology.Triangles, Indices.Count);
 			}
