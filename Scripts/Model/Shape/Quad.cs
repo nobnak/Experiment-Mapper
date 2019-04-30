@@ -23,12 +23,7 @@ namespace M.Model.Shape {
 			new Vector2(0.5f, 0.5f),
 			new Vector2(0.5f, -0.5f)
 		};
-		public static readonly Vector2[] DEFAULT_OUTPUT = new Vector2[] {
-			new Vector2(0f, 0f),
-			new Vector2(-0.5f, 1f),
-			new Vector2(1f, 1f),
-			new Vector2(1f, 0f)
-		};
+		public static readonly Vector2[] DEFAULT_OUTPUT = DEFAULT_INPUT.ToArray();
 
 		public Quad() : base(DEFAULT_INPUT.ToArray(), DEFAULT_OUTPUT.ToArray()) {
 			validator.Validation += () => {

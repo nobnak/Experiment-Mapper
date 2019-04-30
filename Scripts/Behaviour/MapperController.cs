@@ -8,6 +8,7 @@ using nobnak.Gist.IMGUI.Scope;
 using nobnak.Gist.InputDevice;
 using nobnak.Gist.Scoped;
 using nobnak.Gist.StateMachine;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -28,10 +29,13 @@ namespace M.Behaviour {
 		protected FSM<ShapeSelectionState> fsmShapeSelection;
 
 		protected MouseTracker mouse = new MouseTracker();
-		protected Rect guirect = new Rect(10, 10, 300f, 300f);
+		protected Rect guirect = new Rect(10, 10, 250f, 200f);
 		protected TextInt guiSelectedShape;
 		protected TextInt guiSelectedVertices;
 		protected Reactive<VisTargetEnum> rctVisTarget;
+
+		protected BaseTriangleComplex selectedShape;
+		protected Queue<System.Action> guiWorks = new Queue<System.Action>();
 
 		#region member
 		protected void SetMapper(Mapper mapper) {
@@ -72,26 +76,27 @@ namespace M.Behaviour {
 		}
 
 		protected void Window(int id) {
-			var shapeSelected = 0 <= gui.selectedShape && gui.selectedShape < mapper.Count;
-
-			using (new GUIChangedScope(() => { })) {
-				var shape = GetSelectedShape();
-
+			using (new GUIChangedScope(() => validator.Invalidate())) {
 				using (new GUILayout.VerticalScope()) {
 					using (new GUILayout.HorizontalScope()) {
-						GUILayout.Label("Edit target", GUILayout.ExpandWidth(false));
-						rctVisTarget.Value = VIS_TARGET_ENUM_VALUES[GUILayout.SelectionGrid(
-							(int)rctVisTarget.Value,
-							VIS_TARGET_ENUM_NAMES, VIS_TARGET_ENUM_NAMES.Length)];
+						GUILayout.Label("Edit:");
+						var fvis = rctVisTarget.Value;
+						for (var i = 0; i < VIS_TARGET_ENUM_VALUES.Length; i++) {
+							var name = VIS_TARGET_ENUM_NAMES[i];
+							var val = VIS_TARGET_ENUM_VALUES[i];
+							fvis = GUILayout.Toggle(fvis == val, name, GUILayout.ExpandWidth(false)) 
+								? val : fvis;
+						}
+						rctVisTarget.Value = fvis;
 					}
 
 					using (new GUILayout.HorizontalScope()) {
-						GUILayout.Label("Visual", GUILayout.ExpandWidth(false));
+						GUILayout.Label("Visual:");
 						var flags = mapper.CurrFeature;
 						var fuv = (flags & MapperMaterial.FeatureEnum.UV) != 0;
 						var fgrid = (flags & MapperMaterial.FeatureEnum.WIREFRAME) != 0;
-						fuv = GUILayout.Toggle(fuv, "UV");
-						fgrid = GUILayout.Toggle(fgrid, "Grid");
+						fuv = GUILayout.Toggle(fuv, "UV", GUILayout.ExpandWidth(false));
+						fgrid = GUILayout.Toggle(fgrid, "Grid", GUILayout.ExpandWidth(false));
 						flags = (flags & ~(
 							MapperMaterial.FeatureEnum.IMAGE
 							| MapperMaterial.FeatureEnum.UV
@@ -101,41 +106,58 @@ namespace M.Behaviour {
 						mapper.CurrFeature = flags;
 					}
 
-					GUILayout.Space(20);
-
 					using (new GUILayout.HorizontalScope()) {
-						GUILayout.Label(string.Format("Selected vertices:{0}", guiSelectedVertices.StrValue),
-							GUILayout.ExpandWidth(false));
-						if (GUILayout.Button("Clear"))
-							guiSelectedVertices.Value = 0;
-						if (GUILayout.Button("All"))
-							guiSelectedVertices.Value = -1;
-					}
-					using (new GUILayout.HorizontalScope()) {
-						var flags = guiSelectedVertices.Value;
-						if (shape != null) {
-							for (var i = 0; i < shape.VertexOutputRaw.Count; i++) {
+						GUILayout.Label("Vrtices:");
+						if (selectedShape != null) {
+							var flags = guiSelectedVertices.Value;
+							for (var i = 0; i < selectedShape.VertexOutput.Count; i++) {
 								var bit = 1 << i;
-								var enabled = GUILayout.Toggle((flags & bit) != 0, string.Format("v{0}", i));
+								var enabled = GUILayout.Toggle(
+									(flags & bit) != 0,
+									string.Format("v{0}", i),
+									GUILayout.ExpandWidth(false));
 								flags = (flags & ~bit) | (enabled ? bit : 0);
 							}
+							guiSelectedVertices.Value = flags;
 						}
-						guiSelectedVertices.Value = flags;
 					}
-
-					GUILayout.Space(20);
+					using (new GUILayout.HorizontalScope()) {
+						GUILayout.FlexibleSpace();
+						if (GUILayout.Button("Clear", GUILayout.ExpandWidth(false)))
+							guiSelectedVertices.Value = 0;
+						if (GUILayout.Button("All", GUILayout.ExpandWidth(false)))
+							guiSelectedVertices.Value = -1;
+					}
 
 					using (new GUILayout.HorizontalScope()) {
-						GUILayout.Label("Selected shape", GUILayout.ExpandWidth(false));
-						guiSelectedShape.StrValue = GUILayout.TextField(guiSelectedShape.StrValue);
-						if (GUILayout.Button("<"))
-							guiSelectedShape.Value--;
-						if (GUILayout.Button(">"))
-							guiSelectedShape.Value++;
+						var shapeCount = mapper.Count;
+						GUILayout.Label("Selected shape:");
+						guiSelectedShape.StrValue = GUILayout.TextField(
+							guiSelectedShape.StrValue, GUILayout.ExpandWidth(false));
+						GUILayout.Label(string.Format("/{0}", shapeCount), GUILayout.ExpandWidth(false));
+					}
+					using (new GUILayout.HorizontalScope()) {
+						var shapeCount = mapper.Count;
+						var selected = guiSelectedShape.Value;
+						GUILayout.FlexibleSpace();
+						if (GUILayout.Button("Add", GUILayout.ExpandWidth(false)))
+							guiWorks.Enqueue(() => {
+								selected = data.shapes.quads.Count;
+								data.shapes.quads.Add(new Quad());
+							});
+						if (GUILayout.Button("Remove") && selectedShape != null)
+							guiWorks.Enqueue(() => {
+								selected -= data.shapes.quads.RemoveAll(v => v == selectedShape);
+							});
+						if (GUILayout.Button("<", GUILayout.ExpandWidth(false)))
+							selected--;
+						if (GUILayout.Button(">", GUILayout.ExpandWidth(false)))
+							selected++;
+						guiSelectedShape.Value = Mathf.Clamp(selected, 0, shapeCount-1);
 					}
 
-					if (shape != null)
-						shape.GUI();
+					if (selectedShape != null)
+						selectedShape.GUI();
 				}
 			}
 
@@ -235,6 +257,9 @@ namespace M.Behaviour {
 			validator.Invalidate();
 		}
 		private void Update() {
+			selectedShape = GetSelectedShape();
+			while (guiWorks.Count > 0)
+				guiWorks.Dequeue()();
 			validator.Validate();
 			fsmShapeSelection.Update();
 			mouse.Update();
@@ -255,12 +280,12 @@ namespace M.Behaviour {
 		}
 		[System.Serializable]
 		public class Shapes {
-			public Quad[] quads = new Quad[0];
+			public List<Quad> quads = new List<Quad>();
 
-			public int Count { get { return quads.Length; } }
+			public int Count { get { return quads.Count; } }
 		}
 		public enum ShapeSelectionState { None = 0, Selected }
-		public enum VisTargetEnum { Output = 0, Input }
+		public enum VisTargetEnum { Output = 0, Input = 1 }
 		#region VisTargetEnum consts
 		public static readonly string[] VIS_TARGET_ENUM_NAMES = System.Enum.GetNames(typeof(VisTargetEnum));
 		public static readonly VisTargetEnum[] VIS_TARGET_ENUM_VALUES = (VisTargetEnum[])System.Enum.GetValues(typeof(VisTargetEnum));
@@ -273,7 +298,7 @@ namespace M.Behaviour {
 		[System.Serializable]
 		public class GUIData {
 			public KeycodeToggle toggle = new KeycodeToggle(KeyCode.M);
-			public int selectedShape = -1;
+			public int selectedShape = 0;
 			public int selectedVertices = 0;
 
 		}
