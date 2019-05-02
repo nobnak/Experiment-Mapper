@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Mapper
-  m_Shader: {fileID: 4800000, guid: 272069ac3e8e0bb4b883c642ff780f6e, type: 3}
+  m_Name: Unlit_Vis-Blend
+  m_Shader: {fileID: 4800000, guid: a035de8c7772ca84a94ffed81639ccc1, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -19,18 +19,9 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
-    - _BlendTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    m_Floats:
-    - _Depth: 0.5
-    - _Feature: 9
-    - _Wireframe_Gain: 3
-    - _Wireframe_Repeat: 4.3
-    m_Colors:
-    - _Wireframe_Color: {r: 1, g: 0, b: 0.932662, a: 1}
+    m_Floats: []
+    m_Colors: []

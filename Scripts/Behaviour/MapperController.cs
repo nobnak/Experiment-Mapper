@@ -18,6 +18,9 @@ namespace M.Behaviour {
 	public class MapperController : MonoBehaviour {
 		public Events events = new Events();
 
+		public static readonly MapperMaterial.FeatureEnum[] M_FEATURES = 
+			(MapperMaterial.FeatureEnum[])System.Enum.GetValues(typeof(MapperMaterial.FeatureEnum));
+
 		[SerializeField]
 		protected Data data = new Data();
 		[SerializeField]
@@ -42,7 +45,7 @@ namespace M.Behaviour {
 			this.mapper = mapper;
 			events.MapperOnChanged.Invoke(mapper);
 			if (mapper != null) {
-				mapper.AfterOnUpdate += (src, dst, flags) => {
+				mapper.OnRender += (src, dst, flags) => {
 					if (gui.toggle && 0 <= gui.selectedShape && gui.selectedShape < mapper.Count) {
 						GL.PushMatrix();
 						GL.LoadIdentity();
@@ -67,6 +70,9 @@ namespace M.Behaviour {
 						}
 						GL.PopMatrix();
 					}
+				};
+				mapper.OnBlendTexCreated += (blend) => {
+					events.BlendTexOnCreated.Invoke(blend);
 				};
 			}
 		}
@@ -93,16 +99,12 @@ namespace M.Behaviour {
 					using (new GUILayout.HorizontalScope()) {
 						GUILayout.Label("Visual:");
 						var flags = mapper.CurrFeature;
-						var fuv = (flags & MapperMaterial.FeatureEnum.UV) != 0;
-						var fgrid = (flags & MapperMaterial.FeatureEnum.WIREFRAME) != 0;
-						fuv = GUILayout.Toggle(fuv, "UV", GUILayout.ExpandWidth(false));
-						fgrid = GUILayout.Toggle(fgrid, "Grid", GUILayout.ExpandWidth(false));
-						flags = (flags & ~(
-							MapperMaterial.FeatureEnum.IMAGE
-							| MapperMaterial.FeatureEnum.UV
-							| MapperMaterial.FeatureEnum.WIREFRAME))
-							| (fuv ? MapperMaterial.FeatureEnum.UV : MapperMaterial.FeatureEnum.IMAGE)
-							| (fgrid ? MapperMaterial.FeatureEnum.WIREFRAME : 0);
+						foreach (var feature in M_FEATURES) {
+							var f = (flags & feature) != 0;
+							var name = System.Enum.GetName(typeof(MapperMaterial.FeatureEnum), feature);
+							f = GUILayout.Toggle(f, name, GUILayout.ExpandWidth(false));
+							flags = f ? (flags | feature) : (flags & ~feature);
+						}
 						mapper.CurrFeature = flags;
 					}
 
@@ -277,6 +279,7 @@ namespace M.Behaviour {
 		[System.Serializable]
 		public class Events {
 			public MapperEvent MapperOnChanged = new MapperEvent();
+			public TextureEvent BlendTexOnCreated = new TextureEvent();
 		}
 		[System.Serializable]
 		public class Shapes {

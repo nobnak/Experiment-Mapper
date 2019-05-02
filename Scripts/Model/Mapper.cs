@@ -2,6 +2,7 @@ using M.Model.Shape;
 using nobnak.Gist;
 using nobnak.Gist.Extensions.Array;
 using nobnak.Gist.GPUBuffer;
+using nobnak.Gist.ObjectExt;
 using nobnak.Gist.Scoped;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,7 +12,9 @@ using UnityEngine;
 namespace M.Model {
 
 	public class Mapper : System.IDisposable, IList<BaseTriangleComplex> {
-		public event System.Action<RenderTexture, RenderTexture, FlagOutputVertex> AfterOnUpdate;
+		public event System.Action<RenderTexture, RenderTexture, FlagOutputVertex> OnRender;
+		public event System.Action<RenderTexture> OnBlendTexCreated;
+
 		[System.Flags]
 		public enum FlagOutputVertex {
 			None = 0,
@@ -30,6 +33,8 @@ namespace M.Model {
 		protected Validator validator = new Validator();
 		protected List<BaseTriangleComplex> triangles = new List<BaseTriangleComplex>();
 
+		protected RenderTexture blendTex;
+
 		public Mapper() {
 			mat = new MapperMaterial();
 
@@ -41,24 +46,42 @@ namespace M.Model {
 		}
 
 		#region interface
+		public RenderTexture BlendTex { get { return BlendTex; } }
 		public void Update(RenderTexture src, RenderTexture dst, Color clearColor = default(Color)) {
 			validator.Validate();
-			SetFlags(CurrFlags);
 			mat.Feature = CurrFeature;
 			mat.VertexOutputs = vout;
 			mat.VertexInputs = vin;
 			mat.Indices = indices;
 			mat.Barys = barycentric;
 
+			if (blendTex == null || blendTex.width != src.width || blendTex.height != src.height) {
+				ReleaseBlendTex();
+				blendTex = new RenderTexture(src.width, src.height, 0, 
+					RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+				blendTex.antiAliasing = QualitySettings.antiAliasing;
+				blendTex.autoGenerateMips = false;
+				blendTex.useMipMap = false;
+				blendTex.wrapMode = TextureWrapMode.Clamp;
+				using (new RenderTextureActivator(blendTex)) {
+					mat.TargetPass = MapperMaterial.PassEnum.EdgeBlend;
+					mat.OutputVertex = MapperMaterial.KwOutputVertexEnum.OUTPUT_VIN;
+					mat.Blit(null, blendTex);
+					NotiryOnBlendTexCreated();
+				}
+			}
+
 			using (new RenderTextureActivator(dst))
 				GL.Clear(true, true, clearColor);
 
 			if ((CurrFlags & FlagOutputVertex.Output_SrcImage) != 0)
 				Graphics.Blit(src, dst);
-			mat.Blit(src, dst);
 
-			if (AfterOnUpdate != null)
-				AfterOnUpdate(src, dst, CurrFlags);
+			mat.TargetPass = MapperMaterial.PassEnum.Projection;
+			SetFlags(CurrFlags);
+			mat.BlendTex = blendTex;
+			mat.Blit(src, dst);
+			NotifyPostRender(src, dst);
 		}
 
 		#region ICollection<ITriangleComplex>
@@ -134,8 +157,10 @@ namespace M.Model {
 			indices.Dispose();
 			barycentric.Dispose();
 
+			ReleaseBlendTex();
 			mat.Dispose();
 		}
+
 		#endregion
 
 		#endregion
@@ -153,6 +178,8 @@ namespace M.Model {
 				indices.AddRange(t.Indices.Select(i => i + offset));
 				barycentric.AddRange(t.BarycentricWeights);
 			}
+
+			ReleaseBlendTex();
 		}
 		protected virtual void SetFlags(FlagOutputVertex flags) {
 			mat.OutputVertex = ((flags & FlagOutputVertex.Output_InputVertex) != 0)
@@ -161,6 +188,18 @@ namespace M.Model {
 		}
 		protected virtual void ListenChanged() {
 			validator.Invalidate();
+		}
+		private void ReleaseBlendTex() {
+			blendTex.Destroy();
+			blendTex = null;
+		}
+		private void NotifyPostRender(RenderTexture src, RenderTexture dst) {
+			if (OnRender != null)
+				OnRender(src, dst, CurrFlags);
+		}
+		private void NotiryOnBlendTexCreated() {
+			if (OnBlendTexCreated != null)
+				OnBlendTexCreated(blendTex);
 		}
 		#endregion
 	}
