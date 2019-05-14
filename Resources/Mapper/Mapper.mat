@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Mapper
   m_Shader: {fileID: 4800000, guid: 272069ac3e8e0bb4b883c642ff780f6e, type: 3}
-  m_ShaderKeywords: 
+  m_ShaderKeywords: OUTPUT_VIN
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0

@@ -18,9 +18,6 @@ namespace M.Behaviour {
 	public class MapperController : MonoBehaviour {
 		public Events events = new Events();
 
-		public static readonly MapperMaterial.FeatureEnum[] M_FEATURES = 
-			(MapperMaterial.FeatureEnum[])System.Enum.GetValues(typeof(MapperMaterial.FeatureEnum));
-
 		[SerializeField]
 		protected Data data = new Data();
 		[SerializeField]
@@ -90,22 +87,27 @@ namespace M.Behaviour {
 						for (var i = 0; i < VIS_TARGET_ENUM_VALUES.Length; i++) {
 							var name = VIS_TARGET_ENUM_NAMES[i];
 							var val = VIS_TARGET_ENUM_VALUES[i];
-							fvis = GUILayout.Toggle(fvis == val, name, GUILayout.ExpandWidth(false)) 
-								? val : fvis;
+							var f = fvis == val;
+							f = GUILayout.Toggle(f, name, GUILayout.ExpandWidth(false));
+							fvis = f ? val : fvis;
 						}
 						rctVisTarget.Value = fvis;
 					}
 
 					using (new GUILayout.HorizontalScope()) {
 						GUILayout.Label("Visual:");
-						var flags = mapper.CurrFeature;
-						foreach (var feature in M_FEATURES) {
+						var flaglist = new Mapper.OutputFlags[] {
+							Mapper.OutputFlags.EdgeBlend,
+							Mapper.OutputFlags.WireFrame,
+						};
+						var flags = mapper.CurrFlags;
+						foreach (var feature in flaglist) {
 							var f = (flags & feature) != 0;
-							var name = System.Enum.GetName(typeof(MapperMaterial.FeatureEnum), feature);
+							var name = System.Enum.GetName(typeof(Mapper.OutputFlags), feature);
 							f = GUILayout.Toggle(f, name, GUILayout.ExpandWidth(false));
 							flags = f ? (flags | feature) : (flags & ~feature);
 						}
-						mapper.CurrFeature = flags;
+						mapper.CurrFlags = flags;
 					}
 
 					using (new GUILayout.HorizontalScope()) {
@@ -193,8 +195,8 @@ namespace M.Behaviour {
 			};
 			rctVisTarget.Changed += r => {
 				mapper.CurrFlags = r.Value == VisTargetEnum.Input ?
-					Mapper.FlagOutputVertex.Output_InputVertex | Mapper.FlagOutputVertex.Output_SrcImage :
-					Mapper.FlagOutputVertex.None;
+					(mapper.CurrFlags | Mapper.OutputFlags.InputVertex) :
+					(mapper.CurrFlags & ~Mapper.OutputFlags.InputVertex);
 			};
 
 			validator.Reset();
@@ -295,7 +297,6 @@ namespace M.Behaviour {
 		#endregion
 		[System.Serializable]
 		public class Data {
-			public MapperMaterial.FeatureEnum feature = MapperMaterial.FeatureEnum.IMAGE;
 			public Shapes shapes = new Shapes();
 		}
 		[System.Serializable]

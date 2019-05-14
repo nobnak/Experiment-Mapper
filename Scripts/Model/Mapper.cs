@@ -12,14 +12,15 @@ using UnityEngine;
 namespace M.Model {
 
 	public class Mapper : System.IDisposable, IList<BaseTriangleComplex> {
-		public event System.Action<RenderTexture, RenderTexture, FlagOutputVertex> OnRender;
+		public event System.Action<RenderTexture, RenderTexture, OutputFlags> OnRender;
 		public event System.Action<RenderTexture> OnBlendTexCreated;
 
 		[System.Flags]
-		public enum FlagOutputVertex {
+		public enum OutputFlags {
 			None = 0,
-			Output_InputVertex = 1 << 0,
-			Output_SrcImage = 1 << 1
+			InputVertex = 1 << 0,
+			EdgeBlend = 1 << 2,
+			WireFrame = 1 << 3,
 		}
 
 		public const string NAMESPACE = "M";
@@ -38,8 +39,6 @@ namespace M.Model {
 		public Mapper() {
 			mat = new MapperMaterial();
 
-			CurrFeature = MapperMaterial.FeatureEnum.IMAGE | MapperMaterial.FeatureEnum.WIREFRAME;
-
 			validator.Validation += () => {
 				Rebuild();
 			};
@@ -49,7 +48,6 @@ namespace M.Model {
 		public RenderTexture BlendTex { get { return BlendTex; } }
 		public void Update(RenderTexture src, RenderTexture dst, Color clearColor = default(Color)) {
 			validator.Validate();
-			mat.Feature = CurrFeature;
 			mat.VertexOutputs = vout;
 			mat.VertexInputs = vin;
 			mat.Indices = indices;
@@ -63,34 +61,54 @@ namespace M.Model {
 				blendTex.autoGenerateMips = false;
 				blendTex.useMipMap = false;
 				blendTex.wrapMode = TextureWrapMode.Clamp;
-				using (new RenderTextureActivator(blendTex)) {
-					mat.TargetPass = MapperMaterial.PassEnum.EdgeBlend;
+
+				var accumBlendWeightTex = RenderTexture.GetTemporary(blendTex.descriptor);
+				using (new RenderTextureActivator(accumBlendWeightTex)) {
+					GL.Clear(true, true, Color.clear);
+					mat.TargetPass = MapperMaterial.PassEnum.AccumEdgeBlend;
 					mat.OutputVertex = MapperMaterial.KwOutputVertexEnum.OUTPUT_VIN;
-					mat.Blit(null, blendTex);
-					NotiryOnBlendTexCreated();
+					mat.Blit(null, accumBlendWeightTex);
 				}
+				using (new RenderTextureActivator(blendTex)) {
+					GL.Clear(true, true, Color.clear);
+					mat.TargetPass = MapperMaterial.PassEnum.NormalizeEdgeBlend;
+					mat.OutputVertex = default(MapperMaterial.KwOutputVertexEnum);
+					mat.Blit(accumBlendWeightTex, blendTex);
+				}
+				RenderTexture.ReleaseTemporary(accumBlendWeightTex);
+				mat.BlendTex = blendTex;
+				NotiryOnBlendTexCreated();
 			}
 
 			using (new RenderTextureActivator(dst))
 				GL.Clear(true, true, clearColor);
 
-			if ((CurrFlags & FlagOutputVertex.Output_SrcImage) != 0)
+			if ((CurrFlags & OutputFlags.InputVertex) != 0)
 				Graphics.Blit(src, dst);
 
 			mat.TargetPass = MapperMaterial.PassEnum.Projection;
-			SetFlags(CurrFlags);
-			mat.BlendTex = blendTex;
+			SetOutputVertex(CurrFlags);
 			mat.Blit(src, dst);
+
+			if ((CurrFlags & OutputFlags.EdgeBlend) != 0) {
+				var pass = MapperMaterial.PassEnum.EdgeBlend;
+				Graphics.Blit(null, dst, mat.SetPass(pass), (int)pass);
+			}
+
+			if ((CurrFlags & OutputFlags.WireFrame) != 0) {
+				mat.TargetPass = MapperMaterial.PassEnum.Wireframe;
+				mat.Blit(src, dst);
+			}
+
 			NotifyPostRender(src, dst);
 		}
 
-		#region ICollection<ITriangleComplex>
+#region ICollection<ITriangleComplex>
 		public int Count {
 			get { return triangles.Count; }
 		}
 		public bool IsReadOnly { get { return false; } }
-		public FlagOutputVertex CurrFlags { get; set; }
-		public MapperMaterial.FeatureEnum CurrFeature { get; set; }
+		public OutputFlags CurrFlags { get; set; }
 
 		public void Add(BaseTriangleComplex item) {
 			validator.Invalidate();
@@ -148,9 +166,9 @@ namespace M.Model {
 		IEnumerator IEnumerable.GetEnumerator() {
 			throw new System.NotImplementedException();
 		}
-		#endregion
+#endregion
 
-		#region IDisposable
+#region IDisposable
 		public void Dispose() {
 			vout.Dispose();
 			vin.Dispose();
@@ -161,11 +179,11 @@ namespace M.Model {
 			mat.Dispose();
 		}
 
-		#endregion
+#endregion
 
-		#endregion
+#endregion
 
-		#region member
+#region member
 		protected virtual void Rebuild() {
 			vout.Clear();
 			vin.Clear();
@@ -181,8 +199,8 @@ namespace M.Model {
 
 			ReleaseBlendTex();
 		}
-		protected virtual void SetFlags(FlagOutputVertex flags) {
-			mat.OutputVertex = ((flags & FlagOutputVertex.Output_InputVertex) != 0)
+		protected virtual void SetOutputVertex(OutputFlags flags) {
+			mat.OutputVertex = ((flags & OutputFlags.InputVertex) != 0)
 				? MapperMaterial.KwOutputVertexEnum.OUTPUT_VIN
 				: default(MapperMaterial.KwOutputVertexEnum);
 		}
@@ -201,6 +219,6 @@ namespace M.Model {
 			if (OnBlendTexCreated != null)
 				OnBlendTexCreated(blendTex);
 		}
-		#endregion
+#endregion
 	}
 }

@@ -17,12 +17,20 @@
 			#pragma multi_compile ___ OUTPUT_VIN
 			#include "UnityCG.cginc"
 			#include "Assets/Packages/Gist/CGIncludes/Wireframe.cginc"
-
+			
+            struct appdata_if {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+            };
 			struct v2f {
-				float2 uv : TEXCOORD0;
+				float4 uv : TEXCOORD0;
 				float4 bary : TEXCOORD1;
 				float4 vertex : SV_POSITION;
 			};
+            struct v2f_if {
+                float2 uv : TEXCOORD0;
+                float4 vertex : SV_POSITION;
+            };
 
 			sampler2D _MainTex;
 			float4 _MainTex_TexelSize;
@@ -43,9 +51,9 @@
 				float2 vin = vinputs[vindex];
 				float4 bary = barys[vindex];
 
-				float2 uvin = saturate(0.5 * (vin + 1.0));
+				float4 uv = 0.5 * (float4(vin.xy, vout.xy) + 1.0);
 				if (_MainTex_TexelSize.y < 0)
-					uvin.y = 1 - uvin.y;
+					uv.yw = 1 - uv.yw;
 
 				float4 vertex = 0;
 				#ifdef OUTPUT_VIN
@@ -59,10 +67,16 @@
 
 				v2f o;
 				o.vertex = vertex;
-				o.uv = uvin;
+				o.uv = uv;
 				o.bary = bary;
 				return o;
 			}
+            v2f_if vert_if (appdata_if v) {
+                v2f_if o;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.uv = v.uv;
+                return o;
+            }
 			
 			float blend(float4 b) {
 				return 2 * min(min(b.x, b.y), min(b.z, b.w));
@@ -70,45 +84,87 @@
 
 		ENDCG
 
+		// 0
 		Pass {
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
 			
 			float4 frag (v2f i) : SV_Target {
-				float4 c = 0;
-				float4 cmain = tex2D(_MainTex, i.uv);
-				float4 cblend = tex2D(_BlendTex, i.uv);
-				float b = blend(i.bary);
+				float4 cmain = tex2D(_MainTex, i.uv.xy);
+				float4 cblend = tex2D(_BlendTex, i.uv.zw);
+				float b = cblend.r;
+				#ifdef OUTPUT_VIN
+				b = 1;
+				#endif
 
-				if ((_Feature & 1) != 0)
-					c += float4(cmain.rgb, 1) * cmain.a;
-
-				if ((_Feature & 2) != 0)
-					c += saturate(b / cblend.r);
-
-				if ((_Feature & 4) != 0)
-					c +=  float4(i.uv, 0, 1);
-				if ((_Feature & 8 )!= 0)
-					c = lerp(c, _Wireframe_Color, wireframe(frac(i.bary * _Wireframe_Repeat)));
+				float4 c = cmain * float4(b, b, b, 1);
 
 				return c;
 			}
 			ENDCG
 		}
 
+		// 1
 		Pass {
 			Blend One One
 
 			CGPROGRAM
-
 			#pragma vertex vert
 			#pragma fragment frag
 
 			float4 frag(v2f i) : SV_Target {
-				float4 c;
+				float4 c = 0;
 				c.x = blend(i.bary);
-				c.y = 1;
+				//c.y = 1;
+				return c;
+			}
+			ENDCG
+		}
+
+		// 2
+		Pass {
+			CGPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
+
+			float4 frag (v2f i) : SV_Target {
+				float4 cmain = tex2D(_MainTex, i.uv);
+				float b = blend(i.bary);
+				float4 c = saturate(b / cmain.r);
+				return c;
+			}
+			ENDCG
+		}
+
+		// 3
+		Pass {
+			CGPROGRAM
+			#pragma vertex vert_if
+			#pragma fragment frag
+
+			float4 frag (v2f_if i) : SV_Target {
+				float4 cblend = tex2D(_BlendTex, i.uv);
+				float b = cblend.r;
+				return b;
+			}
+			ENDCG
+		}
+
+		// 4
+		Pass {
+			Blend SrcAlpha OneMinusSrcAlpha
+
+			CGPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
+
+			float4 frag (v2f i) : SV_Target {
+				float4 cwire = _Wireframe_Color;
+				float wb = wireframe(frac(i.bary));
+				float wu = wireframe(frac(i.uv.xy * _Wireframe_Repeat));
+
+				float4 c = lerp(0, cwire, saturate(wb + 0.5 * wu));
 				return c;
 			}
 			ENDCG
