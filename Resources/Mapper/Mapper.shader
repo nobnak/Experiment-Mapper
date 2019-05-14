@@ -160,12 +160,13 @@
 			#pragma fragment frag
 
 			float4 frag (v2f i) : SV_Target {
-				float4 cwire = _Wireframe_Color;
+				float4 c0 = _Wireframe_Color;
+				float4 c1 = float4(c0.gbr, c0.a); //float4(1 - c0.rgb, c0.a);
 				float wb = wireframe(frac(i.bary));
 				float wu = wireframe(frac(i.uv.xy * _Wireframe_Repeat));
 
-				float4 c = lerp(0, cwire, saturate(wb + 0.5 * wu));
-				return c;
+				float4 c = lerp(c0, c1, wb);
+				return float4(c.rgb, c.a * saturate(wb + wu));
 			}
 			ENDCG
 		}
