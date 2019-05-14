@@ -208,7 +208,7 @@ namespace M.Model {
 			validator.Invalidate();
 		}
 		private void ReleaseBlendTex() {
-			blendTex.Destroy();
+			blendTex.DestroySelf();
 			blendTex = null;
 		}
 		private void NotifyPostRender(RenderTexture src, RenderTexture dst) {
