@@ -244,7 +244,18 @@ MonoBehaviour:
         PublicKeyToken=null
   data:
     shapes:
-      quads: []
+      quads:
+      - name: Default
+        input:
+        - {x: -0.5, y: -0.5}
+        - {x: -0.5, y: 0.5}
+        - {x: 0.5, y: 0.5}
+        - {x: 0.5, y: -0.5}
+        output:
+        - {x: -0.5, y: -0.5}
+        - {x: -0.5, y: 0.5}
+        - {x: 0.5, y: 0.5}
+        - {x: 0.5, y: -0.5}
   gui:
     toggle:
       key: 109

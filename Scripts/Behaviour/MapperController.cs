@@ -6,6 +6,7 @@ using nobnak.Gist;
 using nobnak.Gist.DataUI;
 using nobnak.Gist.IMGUI.Scope;
 using nobnak.Gist.InputDevice;
+using nobnak.Gist.Loader;
 using nobnak.Gist.Scoped;
 using nobnak.Gist.StateMachine;
 using System.Collections.Generic;
@@ -22,6 +23,10 @@ namespace M.Behaviour {
 		protected Data data = new Data();
 		[SerializeField]
 		protected GUIData gui = new GUIData();
+		[SerializeField]
+		protected FolderPath folder = new FolderPath();
+		[SerializeField]
+		protected string filename = "MappingData.txt";
 
 		protected GLFigure fig;
 		protected Mapper mapper;
@@ -81,6 +86,20 @@ namespace M.Behaviour {
 		protected void Window(int id) {
 			using (new GUIChangedScope(() => validator.Invalidate())) {
 				using (new GUILayout.VerticalScope()) {
+					using (new GUILayout.HorizontalScope()) {
+						if (GUILayout.Button("Save")) {
+							var json = JsonUtility.ToJson(data);
+							folder.TrySave(filename, json);
+						}
+						if (GUILayout.Button("Load")) {
+							var json = default(string);
+							folder.TryLoad(filename, out json);
+							var newData = JsonUtility.FromJson<Data>(json);
+							data.shapes = newData.shapes;
+							validator.Invalidate();
+						}
+					}
+
 					using (new GUILayout.HorizontalScope()) {
 						GUILayout.Label("Edit:");
 						var fvis = rctVisTarget.Value;
@@ -229,7 +248,7 @@ namespace M.Behaviour {
 					return;
 
 				var s2n = CoordConverter.ScreenToNDC;
-				var dx = (Vector2)s2n.MultiplyVector(m.Positiondiff);
+				var dx = (Vector2)s2n.MultiplyVector(m.PositionDiff);
 
 				var shape = GetSelectedShape();
 				if (shape != null) {

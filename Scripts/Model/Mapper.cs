@@ -40,11 +40,13 @@ namespace M.Model {
 			mat = new MapperMaterial();
 
 			validator.Validation += () => {
+				Debug.Log("Mapper Validation");
 				Rebuild();
 			};
 		}
 
 		#region interface
+		public Validator Validator { get { return validator; } }
 		public RenderTexture BlendTex { get { return BlendTex; } }
 		public void Update(RenderTexture src, RenderTexture dst, Color clearColor = default(Color)) {
 			validator.Validate();
