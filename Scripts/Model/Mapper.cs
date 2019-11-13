@@ -40,7 +40,6 @@ namespace M.Model {
 			mat = new MapperMaterial();
 
 			validator.Validation += () => {
-				Debug.Log("Mapper Validation");
 				Rebuild();
 			};
 		}
