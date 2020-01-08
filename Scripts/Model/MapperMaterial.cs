@@ -13,7 +13,8 @@ namespace M.Model {
 			AccumEdgeBlend = 1,
 			NormalizeEdgeBlend = 2,
 			EdgeBlend = 3,
-			Wireframe = 4,
+			Frame = 4,
+			Grid = 5,
 		}
 
 		public const string PATH_MATERIAL = "Mapper/Mapper";

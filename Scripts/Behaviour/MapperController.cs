@@ -88,15 +88,10 @@ namespace M.Behaviour {
 				using (new GUILayout.VerticalScope()) {
 					using (new GUILayout.HorizontalScope()) {
 						if (GUILayout.Button("Save")) {
-							var json = JsonUtility.ToJson(data);
-							folder.TrySave(filename, json);
+							Save();
 						}
 						if (GUILayout.Button("Load")) {
-							var json = default(string);
-							folder.TryLoad(filename, out json);
-							var newData = JsonUtility.FromJson<Data>(json);
-							data.shapes = newData.shapes;
-							validator.Invalidate();
+							Load();
 						}
 					}
 
@@ -117,7 +112,8 @@ namespace M.Behaviour {
 						GUILayout.Label("Visual:");
 						var flaglist = new Mapper.OutputFlags[] {
 							Mapper.OutputFlags.EdgeBlend,
-							Mapper.OutputFlags.WireFrame,
+							Mapper.OutputFlags.Frame,
+							Mapper.OutputFlags.Grid,
 						};
 						var flags = mapper.CurrFlags;
 						foreach (var feature in flaglist) {
@@ -185,6 +181,19 @@ namespace M.Behaviour {
 			}
 
 			GUI.DragWindow();
+		}
+
+		private void Load() {
+			if (folder.TryLoad(filename, out string json)) {
+				var newData = JsonUtility.FromJson<Data>(json);
+				data.shapes = newData.shapes;
+				validator.Invalidate();
+			}
+		}
+
+		private void Save() {
+			var json = JsonUtility.ToJson(data);
+			folder.TrySave(filename, json);
 		}
 
 		private BaseTriangleComplex GetSelectedShape() {
@@ -264,6 +273,8 @@ namespace M.Behaviour {
 					shape.Invalidate();
 				}
 			};
+
+			Load();
 		}
 
 		private void OnDisable() {

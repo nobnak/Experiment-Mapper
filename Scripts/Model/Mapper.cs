@@ -20,7 +20,8 @@ namespace M.Model {
 			None = 0,
 			InputVertex = 1 << 0,
 			EdgeBlend = 1 << 2,
-			WireFrame = 1 << 3,
+			Frame = 1 << 3,
+			Grid = 1 << 4,
 		}
 
 		public const string NAMESPACE = "M";
@@ -96,8 +97,12 @@ namespace M.Model {
 				Graphics.Blit(null, dst, mat.SetPass(pass), (int)pass);
 			}
 
-			if ((CurrFlags & OutputFlags.WireFrame) != 0) {
-				mat.TargetPass = MapperMaterial.PassEnum.Wireframe;
+			if ((CurrFlags & OutputFlags.Grid) != 0) {
+				mat.TargetPass = MapperMaterial.PassEnum.Grid;
+				mat.Blit(src, dst);
+			}
+			if ((CurrFlags & OutputFlags.Frame) != 0) {
+				mat.TargetPass = MapperMaterial.PassEnum.Frame;
 				mat.Blit(src, dst);
 			}
 

@@ -151,24 +151,41 @@
 			ENDCG
 		}
 
-		// 4
-		Pass {
-			Blend SrcAlpha OneMinusSrcAlpha
+			// 4
+			Pass{
+				Blend SrcAlpha OneMinusSrcAlpha
 
-			CGPROGRAM
-			#pragma vertex vert
-			#pragma fragment frag
+				CGPROGRAM
+				#pragma vertex vert
+				#pragma fragment frag
 
-			float4 frag (v2f i) : SV_Target {
-				float4 c0 = _Wireframe_Color;
-				float4 c1 = float4(c0.gbr, c0.a); //float4(1 - c0.rgb, c0.a);
-				float wb = wireframe(frac(i.bary));
-				float wu = wireframe(frac(i.uv.xy * _Wireframe_Repeat));
+				float4 frag(v2f i) : SV_Target {
+					float4 c0 = _Wireframe_Color;
+					float4 c1 = float4(c0.gbr, c0.a); //float4(1 - c0.rgb, c0.a);
+					float wb = wireframe(frac(i.bary));
 
-				float4 c = lerp(c0, c1, wb);
-				return float4(c.rgb, c.a * saturate(wb + wu));
+					float4 c = lerp(c0, c1, wb);
+					return float4(c.rgb, c.a * wb);
+				}
+				ENDCG
 			}
-			ENDCG
-		}
+
+			// 5
+				Pass{
+					Blend SrcAlpha OneMinusSrcAlpha
+
+					CGPROGRAM
+					#pragma vertex vert
+					#pragma fragment frag
+
+					float4 frag(v2f i) : SV_Target {
+						float4 c0 = _Wireframe_Color;
+						float4 c = float4(c0.gbr, c0.a); //float4(1 - c0.rgb, c0.a);
+						float wu = wireframe(frac(i.uv.xy * _Wireframe_Repeat));
+
+						return float4(c.rgb, c.a * wu);
+					}
+					ENDCG
+			}
 	}
 }

@@ -235,13 +235,9 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 1
-      m_TypeName: M.Behaviour.MapperController+MapperEvent, Assembly-CSharp, Version=0.0.0.0,
-        Culture=neutral, PublicKeyToken=null
     BlendTexOnCreated:
       m_PersistentCalls:
         m_Calls: []
-      m_TypeName: TextureEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-        PublicKeyToken=null
   data:
     shapes:
       quads:
@@ -259,9 +255,14 @@ MonoBehaviour:
   gui:
     toggle:
       key: 109
-      guiVisible: 1
+      guiVisible: 0
     selectedShape: 0
     selectedVertices: 0
+  folder:
+    method: 0
+    specialFolder: 5
+    folderpath: '%USERPROFILE%\Documents\'
+  filename: MappingData.txt
 --- !u!1 &902539674
 GameObject:
   m_ObjectHideFlags: 0
