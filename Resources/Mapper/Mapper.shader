@@ -16,7 +16,7 @@
 		CGINCLUDE
 			#pragma multi_compile ___ OUTPUT_VIN
 			#include "UnityCG.cginc"
-			#include "Assets/Packages/Gist/CGIncludes/Wireframe.cginc"
+			#include "../../../Gist/CGIncludes/Wireframe.cginc"
 			
             struct appdata_if {
                 float4 vertex : POSITION;

@@ -54,7 +54,7 @@ namespace M.Model {
 
 				mat.SetTexture(ID_MAIN_TEX, src);
 				SetPass((int)TargetPass);
-				Graphics.DrawProcedural(MeshTopology.Triangles, Indices.Count);
+				Graphics.DrawProceduralNow(MeshTopology.Triangles, Indices.Count);
 			}
 		}
 		public Material SetPass(int pass) {

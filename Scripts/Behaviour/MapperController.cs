@@ -4,6 +4,7 @@ using M.Model;
 using M.Model.Shape;
 using nobnak.Gist;
 using nobnak.Gist.DataUI;
+using nobnak.Gist.Events;
 using nobnak.Gist.IMGUI.Scope;
 using nobnak.Gist.InputDevice;
 using nobnak.Gist.Loader;
